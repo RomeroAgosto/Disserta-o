@@ -51,10 +51,12 @@ int main(void) {
 	user_led = new mraa::Gpio(1, true, false);
 	user_led->dir(mraa::DIR_OUT);
 
+	/*
 	Spi* led_mat = NULL;
 	led_mat = new mraa::Spi(0);
 	led_mat -> frequency(50000);
 	uint16_t spi_word;
+	*/
 
 	Gpio* load = NULL;
 	load = new mraa::Gpio(9, true, false);
@@ -74,13 +76,13 @@ int main(void) {
 
 	mraa::I2c* temp;
 	temp = new mraa::I2c(0);
-	temp -> frequency(I2C_STD);
 	temp -> address(0x18);
 
 	uint16_t temperature, temp1, temp2;
 	float tempe;
 
 	for (;;) {
+
 		if(!(user_button ->read())){
 			alarm(0);
 			check(user_led -> write(0));
@@ -108,38 +110,20 @@ int main(void) {
 			w=a_pin->readFloat();
 			led -> write(w/0.67);
 			w=w*5;
-			printf("%4.2f V\n", w);
-
+			printf("Analog Input = %4.2f V\n", w);
 
 			temperature = temp -> readWordReg(0b00000101);
 
-			temperature = reverse_int16(temperature);
-			temperature = (temperature & 0x0FFF)/16;
+			//temperature = reverse_int16(temperature);
+			temp1 = (temperature & 0x00ff)<<8;
+			temp2 = (temperature & 0xff00)>> 8;
+			temperature = temp1 | temp2;
 
-			/*temp1 = (temperature & 0x00FF);
-			temp2 = (temperature & 0xFF00) >> 8;
-
-			//Convert the temperature data
-			//First Check flag bits
-			if ((temp2 & 0x80) == 0x80){ 		//TA ³ TCRIT
-			}
-
-			if ((temp2 & 0x40) == 0x40){ 		//TA > TUPPER
-			}
-
-			if ((temp2 & 0x20) == 0x20){ 		//TA < TLOWER
-			}
-
-			temp2 = temp2 & 0x1F;	 			//Clear flag bits
-
-			if ((temp2 & 0x10) == 0x10){ 		//TA < 0°C
-			temp2 = temp2 & 0x0F; 				//Clear SIGN
-			tempe = 256 - (temp2 * 16 + temp1 / 16);
-			}else 								//TA ³ 0°C
-			tempe = (temp2 * 16 + temp1 / 16);
-			*/
-
-			printf("%4.2f °C\n", temperature);
+			temperature = temperature & 0x0FFF;
+			  tempe= temperature / 16.0;
+			  if (temperature & 0x1000)
+			    tempe -= 256;
+			  printf("Current Temperature is %4.2f C\n", tempe);
 
 			alarm(1);
 			flag=0;
