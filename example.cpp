@@ -3,6 +3,7 @@
 #include <signal.h>
 using namespace std;
 #include "mraa.hpp"
+#include "MCP9808.hpp"
 
 using namespace mraa;
 
@@ -17,66 +18,53 @@ void check(int err) {
 		exit(2);
 	}
 }
+Gpio* user_button = NULL;
+Gpio* ext_button = NULL;
+Gpio* user_led = NULL;
+Gpio* load = NULL;
+Gpio* led = NULL;
+Pwm* pwm = NULL;
+Aio* a_pin = NULL;
+mraa::I2c* temp;
+//Spi* led_mat = NULL;
 
-uint16_t reverse_int16(uint16_t v) {
-
-	uint16_t r = v; // r will be reversed bits of v; first get LSB of v
-	int s = sizeof(v) * 8 - 1; // extra shift needed at end
-
-	for (v >>= 1; v; v >>= 1)
-	{
-	  r <<= 1;
-	  r |= v & 1;
-	  s--;
-	}
-	r <<= s; // shift when v's highest bits are zero
-	return r;
-}
-
-int main(void) {
-	cout << "Hello IOT2020." << endl;
+void setup () {
 
 	signal(SIGALRM, &sigalrm_handler);
 	alarm(1);
 
-	Gpio* user_button = NULL;
 	user_button = new mraa::Gpio(63, true, true);
 	user_button->dir(mraa::DIR_IN);
 
-	Gpio* ext_button = NULL;
 	ext_button = new mraa::Gpio(8);
 	ext_button->dir(mraa::DIR_IN);
 
-	Gpio* user_led = NULL;
 	user_led = new mraa::Gpio(1, true, false);
 	user_led->dir(mraa::DIR_OUT);
 
 	/*
-	Spi* led_mat = NULL;
 	led_mat = new mraa::Spi(0);
 	led_mat -> frequency(50000);
 	uint16_t spi_word;
 	*/
 
-	Gpio* load = NULL;
 	load = new mraa::Gpio(9, true, false);
 	load->dir(mraa::DIR_OUT);
 
-	Gpio* led = NULL;
 	led = new mraa::Gpio(0);
 	led->dir(mraa::DIR_OUT);
 
-	Pwm* pwm = NULL;
 	pwm = new mraa::Pwm(3);
 
-	Aio* a_pin = NULL;
 	a_pin = new mraa::Aio(0);
 
-	float w;
-
-	mraa::I2c* temp;
 	temp = new mraa::I2c(0);
 	temp -> address(0x18);
+}
+int main(void) {
+	setup();
+
+	float w;
 
 	uint16_t temperature, temp1, temp2;
 	float tempe;
