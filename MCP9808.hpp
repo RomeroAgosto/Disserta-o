@@ -1,6 +1,6 @@
 #pragma once
 
-#include "i2c.hpp"
+#include "stdint.h"
 
 #define MCP9808_REG_CONFIG 0x01      ///< MCP9808 config register
 
@@ -22,5 +22,10 @@
 #define MCP9808_REG_DEVICE_ID 0x07    ///< device ID
 #define MCP9808_REG_RESOLUTION 0x08   ///< resolutin
 
-int MCP9808_I2CADDR_DEFAULT = 0x18 ///< I2C address
+#define MCP9808_I2CADDR 0x18		  ///< I2C address
 
+void MCP9808Init();
+
+float readTempC();
+
+float readTempC(uint8_t address);

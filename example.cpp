@@ -9,6 +9,16 @@ using namespace mraa;
 
 volatile int flag=0;
 
+
+Gpio* user_button = NULL;
+Gpio* ext_button = NULL;
+Gpio* user_led = NULL;
+Gpio* load = NULL;
+Gpio* led = NULL;
+Pwm* pwm = NULL;
+Aio* a_pin = NULL;
+//Spi* led_mat = NULL;
+
 void sigalrm_handler(int sig) {
 	flag=1;
 }
@@ -18,15 +28,6 @@ void check(int err) {
 		exit(2);
 	}
 }
-Gpio* user_button = NULL;
-Gpio* ext_button = NULL;
-Gpio* user_led = NULL;
-Gpio* load = NULL;
-Gpio* led = NULL;
-Pwm* pwm = NULL;
-Aio* a_pin = NULL;
-mraa::I2c* temp;
-//Spi* led_mat = NULL;
 
 void setup () {
 
@@ -57,18 +58,12 @@ void setup () {
 	pwm = new mraa::Pwm(3);
 
 	a_pin = new mraa::Aio(0);
-
-	temp = new mraa::I2c(0);
-	temp -> address(0x18);
+	MCP9808Init();
 }
 int main(void) {
 	setup();
 
 	float w;
-
-	uint16_t temperature, temp1, temp2;
-	float tempe;
-
 	for (;;) {
 
 		if(!(user_button ->read())){
@@ -99,20 +94,8 @@ int main(void) {
 			led -> write(w/0.67);
 			w=w*5;
 			printf("Analog Input = %4.2f V\n", w);
-
-			temperature = temp -> readWordReg(0b00000101);
-
-			//temperature = reverse_int16(temperature);
-			temp1 = (temperature & 0x00ff)<<8;
-			temp2 = (temperature & 0xff00)>> 8;
-			temperature = temp1 | temp2;
-
-			temperature = temperature & 0x0FFF;
-			  tempe= temperature / 16.0;
-			  if (temperature & 0x1000)
-			    tempe -= 256;
-			  printf("Current Temperature is %4.2f C\n", tempe);
-
+			cout << "Temperature = " << readTempC() << endl;
+			cout << "-------------------------" << endl;
 			alarm(1);
 			flag=0;
 		}
