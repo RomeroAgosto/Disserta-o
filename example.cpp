@@ -4,6 +4,7 @@
 using namespace std;
 #include "mraa.hpp"
 #include "MCP9808.hpp"
+#include "TSL2591.hpp"
 
 using namespace mraa;
 
@@ -58,6 +59,8 @@ void setup () {
 	pwm = new mraa::Pwm(3);
 
 	a_pin = new mraa::Aio(0);
+
+	TSL2591Init();
 	MCP9808Init();
 }
 int main(void) {
@@ -94,7 +97,7 @@ int main(void) {
 			led -> write(w/0.67);
 			w=w*5;
 			printf("Analog Input = %4.2f V\n", w);
-			cout << "Temperature = " << readTempC() << endl;
+			cout << "Temperature = " << readTempC() <<"°C // " << readTempF() << "°F" << endl;
 			cout << "-------------------------" << endl;
 			alarm(1);
 			flag=0;
