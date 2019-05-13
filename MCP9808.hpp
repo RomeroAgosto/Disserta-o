@@ -24,14 +24,18 @@
 
 #define MCP9808_I2CADDR_DEFAULT			(0x18)		///< I2C address
 
-void MCP9808Init(uint8_t address = MCP9808_I2CADDR_DEFAULT);
 
-float readTempC(uint8_t address = MCP9808_I2CADDR_DEFAULT);
+class MCP9808 {
+public:
+	MCP9808(uint8_t address = MCP9808_I2CADDR_DEFAULT);
+	float readTempC();
+	float readTempF();
+	void setResolution(uint8_t value);
+	void shutdown_wake(bool sw);
+	void shutdown();
+	void wake();
 
-float readTempF(uint8_t address = MCP9808_I2CADDR_DEFAULT);
-
-void shutdown_wake(bool sw);
-
-void shutdown();
-
-void wake();
+private:
+	uint8_t myAddress;
+	uint16_t read16 (uint8_t reg);
+};

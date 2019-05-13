@@ -4,11 +4,10 @@
 
 mraa::I2c* MCP9808Sensor;
 
-uint16_t read16 (uint8_t reg);
-
-void MCP9808Init(uint8_t address) {
+MCP9808::MCP9808(uint8_t address) {
 	MCP9808Sensor = new mraa::I2c(0);
 	MCP9808Sensor -> address(address);
+	myAddress = address;
 	if (read16(MCP9808_REG_MANUF_ID) != 0x0054)
 		exit(1);
 	if (read16(MCP9808_REG_DEVICE_ID) != 0x0400)
@@ -17,10 +16,10 @@ void MCP9808Init(uint8_t address) {
 	MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, 0x0);
 }
 
-float readTempC(uint8_t address) {
+float MCP9808::readTempC() {
 	float tempe;
 	uint16_t temperature;
-	MCP9808Sensor -> address(address);
+	MCP9808Sensor -> address(myAddress);
 
 	temperature=read16(MCP9808_REG_AMBIENT_TEMP);
 
@@ -30,37 +29,40 @@ float readTempC(uint8_t address) {
 	    tempe -= 256;
 	  return tempe;
 }
-float readTempF(uint8_t address) {
-	return readTempC(address) * 9.0 / 5.0 + 32;
+float MCP9808::readTempF() {
+	return MCP9808::readTempC() * 9.0 / 5.0 + 32;
 }
 
-void shutdown_wake(bool sw) {
-  uint16_t conf_shutdown;
-  uint16_t conf_register = read16(MCP9808_REG_CONFIG);
+void MCP9808::setResolution(uint8_t value) {
+	MCP9808Sensor -> writeReg(MCP9808_REG_RESOLUTION, value & 0x03);
+}
+void MCP9808::shutdown_wake(bool sw) {
+  uint16_t tmp_shutdown;
+  uint16_t tmp_register = read16(MCP9808_REG_CONFIG);
   if (sw == false) {
-    conf_shutdown = conf_register | MCP9808_REG_CONFIG_SHUTDOWN;
-    MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, conf_shutdown);
+    tmp_shutdown = tmp_register | MCP9808_REG_CONFIG_SHUTDOWN;
+    MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, tmp_shutdown);
   }
   if (sw == true) {
-    conf_shutdown = conf_register & ~MCP9808_REG_CONFIG_SHUTDOWN;
-    MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, conf_shutdown);
+    tmp_shutdown = tmp_register & ~MCP9808_REG_CONFIG_SHUTDOWN;
+    MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, tmp_shutdown);
   }
 }
 
 /*!
  *   @brief  Shutdown MCP9808
  */
-void shutdown() { shutdown_wake(false); }
+void MCP9808::shutdown() { MCP9808::shutdown_wake(false); }
 
 /*!
  *   @brief  Wake up MCP9808
  */
-void wake() {
-  shutdown_wake(true);
+void MCP9808::wake() {
+  MCP9808::shutdown_wake(true);
   usleep(250);
 }
 
-uint16_t read16 (uint8_t reg) {
+uint16_t MCP9808::read16 (uint8_t reg) {
 	uint16_t value, tmp1, tmp2;
 	value = MCP9808Sensor->readWordReg(reg);
 
