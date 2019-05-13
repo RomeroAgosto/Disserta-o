@@ -69,6 +69,11 @@ int main(void) {
 	float w;
 	for (;;) {
 
+		if(ext_button ->read()){
+			wake();
+		}else {
+			shutdown();
+		}
 		if(!(user_button ->read())){
 			alarm(0);
 			check(user_led -> write(0));
