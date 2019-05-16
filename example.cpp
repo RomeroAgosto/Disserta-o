@@ -16,6 +16,7 @@ Gpio* ext_button = NULL;
 Gpio* user_led = NULL;
 Gpio* load = NULL;
 Gpio* led = NULL;
+Gpio* DIPSW =NULL;
 Pwm* pwm = NULL;
 Aio* a_pin = NULL;
 MCP9808* sens_temp = NULL;
@@ -37,14 +38,17 @@ void setup () {
 	signal(SIGALRM, &sigalrm_handler);
 	alarm(1);
 
-	user_button = new mraa::Gpio(63, true, true);
-	user_button->dir(mraa::DIR_IN);
+	user_button = new Gpio(63, true, true);
+	user_button->dir(DIR_IN);
 
-	ext_button = new mraa::Gpio(8);
-	ext_button->dir(mraa::DIR_IN);
+	ext_button = new Gpio(9);
+	ext_button->dir(DIR_IN);
 
-	user_led = new mraa::Gpio(1, true, false);
-	user_led->dir(mraa::DIR_OUT);
+	DIPSW = new Gpio(8);
+	DIPSW -> dir(DIR_IN);
+
+	user_led = new Gpio(1, true, false);
+	user_led->dir(DIR_OUT);
 
 	/*
 	led_mat = new mraa::Spi(0);
@@ -52,36 +56,27 @@ void setup () {
 	uint16_t spi_word;
 	*/
 
-	load = new mraa::Gpio(9, true, false);
-	load->dir(mraa::DIR_OUT);
+	load = new Gpio(9, true, false);
+	load->dir(DIR_OUT);
 
-	led = new mraa::Gpio(0);
-	led->dir(mraa::DIR_OUT);
+	led = new Gpio(0);
+	led->dir(DIR_OUT);
 
-	pwm = new mraa::Pwm(3);
+	pwm = new Pwm(3);
 
-	a_pin = new mraa::Aio(0);
+	a_pin = new Aio(0);
 
 	TSL2591Init();
 
 	sens_temp = new MCP9808();
-	sens_temp -> setResolution(0);
 	sens_temp2 = new MCP9808(0x19);
-
+	sens_temp -> setResolution(MCP9808_Resolution_Half);
 }
 int main(void) {
 	setup();
 
 	float w;
 	for (;;) {
-
-		if(ext_button ->read()){
-			sens_temp -> wake();
-			sens_temp2 -> wake();
-		}else {
-			sens_temp -> shutdown();
-			sens_temp2 -> shutdown();
-		}
 		if(!(user_button ->read())){
 			alarm(0);
 			check(user_led -> write(0));
@@ -99,6 +94,13 @@ int main(void) {
 
 
 		if (flag) {
+			if(DIPSW ->read()){
+				sens_temp -> wake();
+				sens_temp2 -> wake();
+			}else {
+				sens_temp -> shutdown();
+				sens_temp2 -> shutdown();
+			}
 
 			if(user_led->read()){
 				check(user_led->write(0));
@@ -109,8 +111,8 @@ int main(void) {
 			led -> write(w/0.67);
 			w=w*5;
 			printf("Analog Input = %4.2f V\n", w);
-			printf("Sensor 1 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp -> readTempC(), sens_temp -> readTempF());
-			printf("Sensor 2 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp2 -> readTempC(), sens_temp2 -> readTempF());
+			printf("Sensor 1 :\nTemperature = %6.4f°C // %6.4f °F // With resolution of %d\n", sens_temp -> readTempC(), sens_temp -> readTempF(), sens_temp -> getResolution());
+			printf("Sensor 2 :\nTemperature = %6.4f°C // %6.4f °F // With resolution of %d\n", sens_temp2 -> readTempC(), sens_temp2 -> readTempF(), sens_temp2 -> getResolution());
 			cout << "-------------------------------------" << endl;
 			alarm(1);
 			flag=0;

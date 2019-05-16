@@ -25,17 +25,29 @@
 #define MCP9808_I2CADDR_DEFAULT			(0x18)		///< I2C address
 
 
+typedef enum
+{
+	MCP9808_Resolution_Half             = 0x00, 	/// Sensor has a resolution of one half of a degree Celsius
+	MCP9808_Resolution_Quarter          = 0x01, 	/// Sensor has a resolution of one quarter of a degree Celsius
+	MCP9808_Resolution_Eighth           = 0x02, 	/// Sensor has a resolution of one eighth of a degree Celsius
+	MCP9808_Resolution_Sixteenth        = 0x03, 	/// Sensor has a resolution of one sixteenth of a degree Celsius
+}
+MCP9808_Resolution_t;
+
 class MCP9808 {
 public:
 	MCP9808(uint8_t address = MCP9808_I2CADDR_DEFAULT);
 	float readTempC();
 	float readTempF();
-	void setResolution(uint8_t value);
+	void setResolution(MCP9808_Resolution_t value);
+	MCP9808_Resolution_t getResolution();
 	void shutdown_wake(bool sw);
 	void shutdown();
 	void wake();
 
 private:
 	uint8_t myAddress;
+	MCP9808_Resolution_t myResolution;
 	uint16_t read16 (uint8_t reg);
+	uint8_t getRealResolution();
 };

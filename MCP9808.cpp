@@ -8,6 +8,7 @@ MCP9808::MCP9808(uint8_t address) {
 	MCP9808Sensor = new mraa::I2c(0);
 	MCP9808Sensor -> address(address);
 	myAddress = address;
+	myResolution = MCP9808_Resolution_Sixteenth;
 	if (read16(MCP9808_REG_MANUF_ID) != 0x0054)
 		exit(1);
 	if (read16(MCP9808_REG_DEVICE_ID) != 0x0400)
@@ -19,7 +20,6 @@ MCP9808::MCP9808(uint8_t address) {
 float MCP9808::readTempC() {
 	float tempe;
 	uint16_t temperature;
-	MCP9808Sensor -> address(myAddress);
 
 	temperature=read16(MCP9808_REG_AMBIENT_TEMP);
 
@@ -33,12 +33,24 @@ float MCP9808::readTempF() {
 	return MCP9808::readTempC() * 9.0 / 5.0 + 32;
 }
 
-void MCP9808::setResolution(uint8_t value) {
-	MCP9808Sensor -> writeReg(MCP9808_REG_RESOLUTION, value & 0x03);
+void MCP9808::setResolution(MCP9808_Resolution_t value) {
+	MCP9808Sensor -> address(myAddress);
+	MCP9808Sensor -> writeReg(MCP9808_REG_RESOLUTION, value);
+	myResolution = value;
 }
+
+MCP9808_Resolution_t MCP9808::getResolution() {
+	if(getRealResolution()==myResolution) {
+  		return myResolution;
+	} else {
+		exit(-1);	
+	}
+}
+
 void MCP9808::shutdown_wake(bool sw) {
   uint16_t tmp_shutdown;
   uint16_t tmp_register = read16(MCP9808_REG_CONFIG);
+  MCP9808Sensor -> address(myAddress);
   if (sw == false) {
     tmp_shutdown = tmp_register | MCP9808_REG_CONFIG_SHUTDOWN;
     MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, tmp_shutdown);
@@ -49,14 +61,8 @@ void MCP9808::shutdown_wake(bool sw) {
   }
 }
 
-/*!
- *   @brief  Shutdown MCP9808
- */
 void MCP9808::shutdown() { MCP9808::shutdown_wake(false); }
 
-/*!
- *   @brief  Wake up MCP9808
- */
 void MCP9808::wake() {
   MCP9808::shutdown_wake(true);
   usleep(250);
@@ -64,6 +70,7 @@ void MCP9808::wake() {
 
 uint16_t MCP9808::read16 (uint8_t reg) {
 	uint16_t value, tmp1, tmp2;
+	MCP9808Sensor -> address(myAddress);
 	value = MCP9808Sensor->readWordReg(reg);
 
 	//Bytes need to be switched
@@ -71,4 +78,9 @@ uint16_t MCP9808::read16 (uint8_t reg) {
 	tmp2 = (value & 0xff00)>> 8;
 	value = tmp1 | tmp2;
 	return value;
+}
+
+uint8_t MCP9808::getRealResolution() {
+	MCP9808Sensor -> address(myAddress);
+	return MCP9808Sensor -> readReg(MCP9808_REG_RESOLUTION);
 }
