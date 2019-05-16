@@ -10,9 +10,9 @@ MCP9808::MCP9808(uint8_t address) {
 	myAddress = address;
 	myResolution = MCP9808_Resolution_Sixteenth;
 	if (read16(MCP9808_REG_MANUF_ID) != 0x0054)
-		exit(1);
+		exit(-1);
 	if (read16(MCP9808_REG_DEVICE_ID) != 0x0400)
-		exit(1);
+		exit(-1);
 
 	MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, 0x0);
 }

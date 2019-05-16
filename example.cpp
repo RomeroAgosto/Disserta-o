@@ -21,6 +21,7 @@ Pwm* pwm = NULL;
 Aio* a_pin = NULL;
 MCP9808* sens_temp = NULL;
 MCP9808* sens_temp2 = NULL;
+TSL2591* sens_light = NULL;
 //Spi* led_mat = NULL;
 
 void sigalrm_handler(int sig) {
@@ -66,11 +67,11 @@ void setup () {
 
 	a_pin = new Aio(0);
 
-	TSL2591Init();
-
 	sens_temp = new MCP9808();
 	sens_temp2 = new MCP9808(0x19);
 	sens_temp -> setResolution(MCP9808_Resolution_Half);
+
+	sens_light = new TSL2591();
 }
 int main(void) {
 	setup();
@@ -111,8 +112,9 @@ int main(void) {
 			led -> write(w/0.67);
 			w=w*5;
 			printf("Analog Input = %4.2f V\n", w);
-			printf("Sensor 1 :\nTemperature = %6.4f°C // %6.4f °F // With resolution of %d\n", sens_temp -> readTempC(), sens_temp -> readTempF(), sens_temp -> getResolution());
-			printf("Sensor 2 :\nTemperature = %6.4f°C // %6.4f °F // With resolution of %d\n", sens_temp2 -> readTempC(), sens_temp2 -> readTempF(), sens_temp2 -> getResolution());
+			printf("Sensor 1 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp -> readTempC(), sens_temp -> readTempF());
+			printf("Sensor 2 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp2 -> readTempC(), sens_temp2 -> readTempF());
+			printf("Lux = %f\n", sens_light -> getLux());
 			cout << "-------------------------------------" << endl;
 			alarm(1);
 			flag=0;
