@@ -5,8 +5,10 @@ using namespace std;
 #include "mraa.hpp"
 #include "MCP9808.hpp"
 #include "TSL2591.hpp"
+#include <mosquittopp.h>
 
 using namespace mraa;
+using namespace mosqpp;
 
 uint8_t flag=0;
 
@@ -22,7 +24,7 @@ Aio* a_pin = NULL;
 MCP9808* sens_temp = NULL;
 MCP9808* sens_temp2 = NULL;
 TSL2591* sens_light = NULL;
-//Spi* led_mat = NULL;
+mosquittopp* mqtt = NULL;
 
 void sigalrm_handler(int sig) {
 	flag=1;
@@ -30,7 +32,7 @@ void sigalrm_handler(int sig) {
 
 void check(int err) {
 	if (err<0) {
-		exit(2);
+		exit(-2);
 	}
 }
 
@@ -51,12 +53,6 @@ void setup () {
 	user_led = new Gpio(1, true, false);
 	user_led->dir(DIR_OUT);
 
-	/*
-	led_mat = new mraa::Spi(0);
-	led_mat -> frequency(50000);
-	uint16_t spi_word;
-	*/
-
 	load = new Gpio(9, true, false);
 	load->dir(DIR_OUT);
 
@@ -72,10 +68,16 @@ void setup () {
 	sens_temp -> setResolution(MCP9808_Resolution_Half);
 
 	sens_light = new TSL2591();
+
+	mqtt = new mosquittopp();
+
+	lib_init();											// Initialize libmosquitto
+
+	mqtt -> connect("192.168.200.3", 1883, 120);		// Connect to MQTT Broker
+
 }
 int main(void) {
 	setup();
-
 	float w;
 	for (;;) {
 		if(!(user_button ->read())){
@@ -83,12 +85,6 @@ int main(void) {
 			check(user_led -> write(0));
 			exit(1);
 		}
-		/*
-		spi_word=0x10F0;
-		load -> write(0);
-		led_mat -> transfer_word(&spi_word, NULL, 2);
-		load -> write(1);
-		*/
 		w=a_pin->readFloat();
 		pwm -> write(w/0.67);
 		check(led -> write(ext_button -> read()));

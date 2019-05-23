@@ -1,6 +1,7 @@
 #include "MCP9808.hpp"
 #include "i2c.hpp"
 #include "unistd.h"
+#include "byteswap.h"
 
 mraa::I2c* MCP9808Sensor;
 
@@ -69,15 +70,13 @@ void MCP9808::wake() {
 }
 
 uint16_t MCP9808::read16 (uint8_t reg) {
-	uint16_t value, tmp1, tmp2;
+	uint16_t value;
 	MCP9808Sensor -> address(myAddress);
 	value = MCP9808Sensor->readWordReg(reg);
 
 	//Bytes need to be switched
-	tmp1 = (value & 0x00ff)<<8;
-	tmp2 = (value & 0xff00)>> 8;
-	value = tmp1 | tmp2;
-	return value;
+
+	return bswap_16(value);
 }
 
 uint8_t MCP9808::getRealResolution() {
