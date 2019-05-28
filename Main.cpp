@@ -5,10 +5,8 @@ using namespace std;
 #include "mraa.hpp"
 #include "MCP9808.hpp"
 #include "TSL2591.hpp"
-#include <mosquittopp.h>
 
 using namespace mraa;
-using namespace mosqpp;
 
 uint8_t flag=0;
 
@@ -24,7 +22,6 @@ Aio* a_pin = NULL;
 MCP9808* sens_temp = NULL;
 MCP9808* sens_temp2 = NULL;
 TSL2591* sens_light = NULL;
-mosquittopp* mqtt = NULL;
 
 void sigalrm_handler(int sig) {
 	flag=1;
@@ -37,7 +34,6 @@ void check(int err) {
 }
 
 void setup () {
-
 	signal(SIGALRM, &sigalrm_handler);
 	alarm(1);
 
@@ -68,12 +64,6 @@ void setup () {
 	sens_temp -> setResolution(MCP9808_Resolution_Half);
 
 	sens_light = new TSL2591();
-
-	mqtt = new mosquittopp();
-
-	lib_init();											// Initialize libmosquitto
-
-	mqtt -> connect("192.168.200.3", 1883, 120);		// Connect to MQTT Broker
 
 }
 int main(void) {
