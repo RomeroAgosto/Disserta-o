@@ -23,17 +23,20 @@ MCP9808* sens_temp = NULL;
 MCP9808* sens_temp2 = NULL;
 TSL2591* sens_light = NULL;
 
-void sigalrm_handler(int sig) {
+void sigalrm_handler(int sig)
+{
 	flag=1;
 }
 
-void check(int err) {
+void check(int err)
+{
 	if (err<0) {
 		exit(-2);
 	}
 }
 
-void setup () {
+void setup ()
+{
 	signal(SIGALRM, &sigalrm_handler);
 	alarm(1);
 
@@ -66,7 +69,8 @@ void setup () {
 	sens_light = new TSL2591();
 
 }
-int main(void) {
+int main(void)
+{
 	setup();
 	float w;
 	for (;;) {
