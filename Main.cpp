@@ -32,81 +32,42 @@ void check(int err) {
 		exit(-2);
 	}
 }
-
-void setup () {
-	signal(SIGALRM, &sigalrm_handler);
-	alarm(1);
-
-	user_button = new Gpio(63, true, true);
-	user_button->dir(DIR_IN);
-
-	ext_button = new Gpio(9);
-	ext_button->dir(DIR_IN);
-
-	DIPSW = new Gpio(8);
-	DIPSW -> dir(DIR_IN);
-
-	user_led = new Gpio(1, true, false);
-	user_led->dir(DIR_OUT);
-
-	load = new Gpio(9, true, false);
-	load->dir(DIR_OUT);
-
-	led = new Gpio(0);
-	led->dir(DIR_OUT);
-
-	pwm = new Pwm(3);
-
-	a_pin = new Aio(0);
-
-	sens_temp = new MCP9808();
-	sens_temp2 = new MCP9808(0x19);
-	sens_temp -> setResolution(MCP9808_Resolution_Half);
-
-	sens_light = new TSL2591();
-
-}
 int main(void) {
-	setup();
-	float w;
-	for (;;) {
-		if(!(user_button ->read())){
-			alarm(0);
-			check(user_led -> write(0));
-			exit(1);
-		}
-		w=a_pin->readFloat();
-		pwm -> write(w/0.67);
-		check(led -> write(ext_button -> read()));
+	// Worker thread instances
+WorkerThread workerThread1("WorkerThread1");
+WorkerThread workerThread2("WorkerThread2");
 
+int main(void)
+{  
+    // Create worker threads
+    workerThread1.CreateThread();
+    workerThread2.CreateThread();
 
-		if (flag) {
-			if(DIPSW ->read()){
-				sens_temp -> wake();
-				sens_temp2 -> wake();
-			}else {
-				sens_temp -> shutdown();
-				sens_temp2 -> shutdown();
-			}
+    // Create message to send to worker thread 1
+    UserData* userData1 = new UserData();
+    userData1->msg = "Hello world";
+    userData1->year = 2017;
 
-			if(user_led->read()){
-				check(user_led->write(0));
-			} else {
-				check(user_led->write(1));
-			}
-			w=a_pin->readFloat();
-			led -> write(w/0.67);
-			w=w*5;
-			printf("Analog Input = %4.2f V\n", w);
-			printf("Sensor 1 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp -> readTempC(), sens_temp -> readTempF());
-			printf("Sensor 2 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp2 -> readTempC(), sens_temp2 -> readTempF());
-			printf("Lux = %f\n", sens_light -> getLux());
-			cout << "-------------------------------------" << endl;
-			alarm(1);
-			flag=0;
-		}
+    // Post the message to worker thread 1
+    workerThread1.PostMsg(userData1);
 
-	}
+    // Create message to send to worker thread 2
+    UserData* userData2 = new UserData();
+    userData2->msg = "Goodbye world";
+    userData2->year = 2017;
+
+    // Post the message to worker thread 2
+    workerThread2.PostMsg(userData2);
+
+    // Give time for messages processing on worker threads
+    this_thread::sleep_for(1s);
+
+    workerThread1.ExitThread();
+    workerThread2.ExitThread();
+
+    return 0;
+}
+	
 	return 0;
 }
 
