@@ -8,37 +8,24 @@ using namespace std;
 
 using namespace mraa;
 
-uint8_t flag=0;
-
-
-Gpio* user_button = NULL;
-Gpio* ext_button = NULL;
-Gpio* user_led = NULL;
-Gpio* load = NULL;
-Gpio* led = NULL;
-Gpio* DIPSW =NULL;
-Pwm* pwm = NULL;
-Aio* a_pin = NULL;
-MCP9808* sens_temp = NULL;
-MCP9808* sens_temp2 = NULL;
-TSL2591* sens_light = NULL;
-
-void sigalrm_handler(int sig) {
-	flag=1;
-}
-
-void check(int err) {
-	if (err<0) {
-		exit(-2);
-	}
-}
-int main(void) {
 	// Worker thread instances
 WorkerThread workerThread1("WorkerThread1");
 WorkerThread workerThread2("WorkerThread2");
 
+void sigalrm_handler(int sig)
+{
+	flag=1;
+}
+
+void check(int err)
+{
+	if (err<0) {
+		exit(-2);
+	}
+}
 int main(void)
-{  
+{
+ 
     // Create worker threads
     workerThread1.CreateThread();
     workerThread2.CreateThread();
@@ -66,8 +53,5 @@ int main(void)
     workerThread2.ExitThread();
 
     return 0;
-}
-	
-	return 0;
 }
 
