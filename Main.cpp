@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     msgid = msgget(key, 0);
 
     cout << "Main" << msgid << endl;
-    message.mesg_type = 1;
+    message.mesg_type = 2;
     strncpy(message.mesg_text, "Hello World", sizeof(message.mesg_text));
 
     // msgsnd to send message
