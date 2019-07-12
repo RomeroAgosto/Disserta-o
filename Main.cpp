@@ -2,14 +2,23 @@
 #include <stdio.h>
 #include <signal.h>
 using namespace std;
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <sys/types.h>
+#include <string.h>
 #include "mraa.hpp"
 #include "MCP9808.hpp"
 #include "TSL2591.hpp"
 
+#define TYPE_SUB 1
+#define TYPE_PUB 2
+#define TYPE_TOP 3
+#define TYPE_MES 4
+
 using namespace mraa;
 
 uint8_t flag=0;
-
+int msgid;
 
 Gpio* user_button = NULL;
 Gpio* ext_button = NULL;
@@ -23,17 +32,19 @@ MCP9808* sens_temp = NULL;
 MCP9808* sens_temp2 = NULL;
 TSL2591* sens_light = NULL;
 
-void sigalrm_handler(int sig)
-{
-	flag=1;
-}
+// structure for message queue
+struct mesg_buffer {
+    long mesg_type;
+    char mesg_text[100];
+} message;
 
-void check(int err)
-{
-	if (err<0) {
-		exit(-2);
-	}
-}
+void sub(string topic);
+
+int sendMessage();
+
+void check(int err);
+
+void sigalrm_handler(int sig);
 
 void setup ()
 {
@@ -69,9 +80,32 @@ void setup ()
 	sens_light = new TSL2591();
 
 }
-int main(void)
+
+void MQTTSetup(int argc, char *argv[]){
+	key_t key;
+
+    if(argc==2)
+    {
+    	key = atoi(argv[1]);
+    }else
+	{
+		// ftok to generate unique key
+		key = ftok("progfile", 65);
+    }
+
+    // msgget creates a message queue
+    // and returns identifier
+    sleep(1);
+    msgid = msgget(key, 0);
+
+}
+
+int main(int argc, char *argv[])
 {
 	setup();
+	MQTTSetup(argc, argv);
+
+	sub("Queue");
 	float w;
 	for (;;) {
 		if(!(user_button ->read())){
@@ -114,3 +148,30 @@ int main(void)
 	return 0;
 }
 
+void sub(string topic) {
+	//Inform that it is a subscribe and to what topic
+	message.mesg_type=TYPE_SUB;
+
+    uint i;
+    for (i = 0; i < sizeof(topic); i++) {
+        message.mesg_text[i] = topic[i];
+    }
+	sendMessage();
+}
+
+int sendMessage() {
+	msgsnd(msgid, &message, sizeof(message), 0);
+	return 0;
+}
+
+void check(int err)
+{
+	if (err<0) {
+		exit(-2);
+	}
+}
+
+void sigalrm_handler(int sig)
+{
+	flag=1;
+}
