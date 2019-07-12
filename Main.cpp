@@ -1,43 +1,48 @@
-#include "WorkerThread.h"
-#include "Fault.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <sys/types.h>
 #include <iostream>
+#include <string.h>
+#include <unistd.h>
 
 using namespace std;
 
-// Worker thread instances
-WorkerThread workerThread1("WorkerThread1");
-WorkerThread workerThread2("WorkerThread2");
+// structure for message queue
+struct mesg_buffer {
+    long mesg_type;
+    char mesg_text[100];
+} message;
 
 //------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
-int main(void)
+int main(int argc, char *argv[])
 {	
-	// Create worker threads
-	workerThread1.CreateThread();
-	workerThread2.CreateThread();
+	key_t key;
+    int msgid;
 
-	// Create message to send to worker thread 1
-	UserData* userData1 = new UserData();
-	userData1->msg = "Hello world";
-	userData1->year = 2017;
+    if(argc==2)
+    {
+    	key = atoi(argv[1]);
+    }else
+	{
+		// ftok to generate unique key
+		key = ftok("progfile", 65);
+    }
 
-	// Post the message to worker thread 1
-	workerThread1.PostMsg(userData1);
+    // msgget creates a message queue
+    // and returns identifier
+    sleep(1);
+    msgid = msgget(key, 0);
 
-	// Create message to send to worker thread 2
-	UserData* userData2 = new UserData();
-	userData2->msg = "Goodbye world";
-	userData2->year = 2017;
+    cout << "Main" << msgid << endl;
+    message.mesg_type = 1;
+    strncpy(message.mesg_text, "Hello World", sizeof(message.mesg_text));
 
-	// Post the message to worker thread 2
-	workerThread2.PostMsg(userData2);
-
-	// Give time for messages processing on worker threads
-	this_thread::sleep_for(1s);
-
-	workerThread1.ExitThread();
-	workerThread2.ExitThread();
+    // msgsnd to send message
+	msgsnd(msgid, &message, sizeof(message), 0);
 
 	return 0;
 }
