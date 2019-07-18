@@ -11,18 +11,19 @@ using namespace std;
 
 using namespace mraa;
 
+/*
 union semun {
 	int val;
 	struct semid_ds *buf;
 	unsigned short *array;
 };
+*/
 
 // structure for message queue
 struct mesg_buffer QueueMessage;
 
 uint8_t flag=0;
-static int msgid;
-static int sem_id;
+static int msgid1, msgid2;
 
 Gpio* user_button = NULL;
 Gpio* ext_button = NULL;
@@ -46,18 +47,25 @@ void MQ_pub(string topic, string content);
 
 int sendMessage(void);
 
+int receiveNMessage(int long n);
+
+int receiveAnyMessage(void);
+
 void check(int err);
+
+void sigalrm_handler(int sig);
+
+/*
+static int set_semvalue(void);
+
+static void del_semvalue(void);
 
 static int semaphore_v(void);
 
 static int semaphore_p(void);
-
-void sigalrm_handler(int sig);
+*/
 
 int main(int argc, char *argv[]){
-
-	sem_id = semget((key_t)SEM_KEY, 1, 0666 | IPC_CREAT);
-
 	MQSetup();
 	SensorInit();
 
@@ -75,6 +83,7 @@ int main(int argc, char *argv[]){
 
 
 		if (flag) {
+			alarm(1);
 			if(DIPSW ->read()){
 				sens_temp -> wake();
 				sens_temp2 -> wake();
@@ -92,14 +101,10 @@ int main(int argc, char *argv[]){
 			led -> write(w/0.67);
 			w=w*5;
 			printf("Analog Input = %4.2f V\n", w);
-			MQ_pub("Sensor/Temp/1/C", to_string(sens_temp -> readTempC()));
-			MQ_pub("Sensor/Temp/2/C", to_string(sens_temp2 -> readTempC()));
-			MQ_pub("Sensor/Lux/1/C", to_string(sens_light -> getLux()));
-			printf("Sensor 1 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp -> readTempC(), sens_temp -> readTempF());
-			printf("Sensor 2 :\nTemperature = %6.4f°C // %6.4f °F\n", sens_temp2 -> readTempC(), sens_temp2 -> readTempF());
-			printf("Lux = %f\n", sens_light -> getLux());
+			MQ_pub("Sensor/Temp/1/Val", to_string(sens_temp -> readTempC()));
+			MQ_pub("Sensor/Temp/2/Val", to_string(sens_temp2 -> readTempC()));
+			MQ_pub("Sensor/Lux/1/Val", to_string(sens_light -> getLux()));
 			cout << "-------------------------------------" << endl;
-			alarm(1);
 			flag=0;
 		}
 	}
@@ -112,40 +117,19 @@ void MQSetup(void){
 	// msgget creates a message queue
 	// and returns identifier
 	// msgget used to try to join with the queue from the Handler
-	if (!semaphore_p()) exit(EXIT_FAILURE);
-	msgid = msgget((key_t)MQ_KEY, 0666 | IPC_CREAT);
-	if (msgid == -1) {
+	msgid1 = msgget((key_t)MQ_KEY1, 0666 | IPC_CREAT);
+	if (msgid1 == -1) {
 		fprintf(stderr, "msgget failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
-	if (msgrcv(msgid, (void *)&QueueMessage, BUFSIZ, CONNECTION_OPEN, IPC_NOWAIT) == -1) {
-		printf("Message Queue not opened yet\n"
-			   "Opening Message Queue and Waiting for connection from Handler\n");
-		QueueMessage.mesg_type=CONNECTION_OPEN;
-		strcpy(QueueMessage.topic, "");
-		strcpy(QueueMessage.content, "Welcome to Message Queue");
-
-		if (msgsnd(msgid, (void *)&QueueMessage, MAX_TEXT, 0) == -1) {
-			fprintf(stderr, "msgsnd failed\n");
-			exit(EXIT_FAILURE);
-		}
-		if (!semaphore_v()) exit(EXIT_FAILURE);
-		if (msgrcv(msgid, (void *)&QueueMessage, BUFSIZ, CONNECTION_ACK, 0) == -1) {
-			fprintf(stderr, "msgrcv failed with error: %d\n", errno);
-			exit(EXIT_FAILURE);
-		}
-	}else {
-		printf("Message Queue already exists, joining it...\n");
-		QueueMessage.mesg_type=CONNECTION_ACK;
-		strcpy(QueueMessage.content, "Hi");
-
-		if (msgsnd(msgid, (void *)&QueueMessage, MAX_TEXT, 0) == -1) {
-			fprintf(stderr, "msgsnd failed\n");
-			exit(EXIT_FAILURE);
-		}
+	msgid2 = msgget((key_t)MQ_KEY2, 0666 | IPC_CREAT);
+	if (msgid2 == -1) {
+		fprintf(stderr, "msgget failed with error: %d\n", errno);
+		exit(EXIT_FAILURE);
 	}
+
 	printf("Connection Established\n"
-			"Main MQID: %d\n", msgid);
+			"Main MQID: %d	&	%d\n", msgid1, msgid2);
 }
 
 void SensorInit (void){
@@ -208,8 +192,24 @@ void MQ_pub(string topic, string content)
 }
 
 int sendMessage(void) {
-	if (msgsnd(msgid, (void *)&QueueMessage, MAX_TEXT, 0) == -1) {
+	if (msgsnd(msgid1, (void *)&QueueMessage, MAX_TEXT, 0) == -1) {
 		fprintf(stderr, "msgsnd failed\n");
+		exit(EXIT_FAILURE);
+	}
+	return 0;
+}
+
+int receiveNMessage(int long n) {
+	if (msgrcv(msgid2, (void *)&QueueMessage, BUFSIZ, n, 0) == -1) {
+		fprintf(stderr, "msgrcv failed with error: %d\n", errno);
+		exit(EXIT_FAILURE);
+	}
+	return 0;
+}
+
+int receiveAnyMessage(void) {
+	if (msgrcv(msgid2, (void *)&QueueMessage, BUFSIZ, 0, 0) == -1) {
+		fprintf(stderr, "msgrcv failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
 	return 0;
@@ -222,12 +222,32 @@ void check(int err)
 	}
 }
 
+void sigalrm_handler(int sig)
+{
+	flag=1;
+}
+
+/*
+ * static int set_semvalue(void){
+
+	union semun sem_union;
+	sem_union.val = 1;
+	if (semctl(sem_id, 0, SETVAL, sem_union) == -1) return(0);
+	return(1);
+}
+
+static void del_semvalue(void){
+
+	union semun sem_union;
+	if (semctl(sem_id, 0, IPC_RMID, sem_union) == -1)
+		fprintf(stderr, "Failed to delete semaphore\n");
+}
 
 static int semaphore_v(void){
 
 	struct sembuf sem_b;
 	sem_b.sem_num = 0;
-	sem_b.sem_op = 1; /* V() */
+	sem_b.sem_op = 1;
 	sem_b.sem_flg = SEM_UNDO;
 	if (semop(sem_id, &sem_b, 1) == -1) {
 		fprintf(stderr, "semaphore_v failed\n");
@@ -240,7 +260,7 @@ static int semaphore_p(void){
 
 	struct sembuf sem_b;
 	sem_b.sem_num = 0;
-	sem_b.sem_op = -1; /* P() */
+	sem_b.sem_op = -1;
 	sem_b.sem_flg = SEM_UNDO;
 	if (semop(sem_id, &sem_b, 1) == -1) {
 		fprintf(stderr, "semaphore_p failed\n");
@@ -248,8 +268,4 @@ static int semaphore_p(void){
 	}
 	return(1);
 }
-
-void sigalrm_handler(int sig)
-{
-	flag=1;
-}
+*/
