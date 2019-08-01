@@ -95,7 +95,21 @@ void * WorkerThread(void * a)
 		if ((strncmp(QueueMessageBuffer.topic, "MainControl", 11) == 0) & (strncmp(QueueMessageBuffer.content, "EXIT", 4)==0)){
 			exitRoutine();
 		}
+	//string separation ="/";
+	size_t index2cut;
+	string subTopic;
+	while(index2cut=(QueueMessageBuffer.topic.find('/'))!=std::string::npos) {
+		subTopic=QueueMessageBuffer.topic.substr(0,index2cut);
+		switch (subTopic) {
+			case "Sensor" :
+				state = SENSOR;
+				printf("Current State: %d", state);
+			break;	
 
+			default :
+				state = DEFAULT;
+				printf("Current State: %d", state);
+		}
 	}
 
 	return NULL;
