@@ -1,9 +1,13 @@
-#include <iostream>
+/*
+ * To Exit program send EXIT to MainControl
+ *
+ */#include <iostream>
 #include <stdio.h>
 #include <errno.h>
 #include <signal.h>
 using namespace std;
 #include <string.h>
+#include <pthread.h>
 #include "mraa.hpp"
 #include "C:\Users\Ricardo\eclipse-workspace\MQ Defines.h"
 #include "MCP9808.hpp"
@@ -19,11 +23,19 @@ union semun {
 };
 */
 
-// structure for message queue
-struct mesg_buffer QueueMessage;
+// structures for message queue
+//	Struct to send
+struct mesg_buffer QueueMessageSend;
+//	Struct to serve as a buffer when a message is received to avoid overwrites
+struct mesg_buffer QueueMessageBuffer;
+
+char running=1;
 
 uint8_t flag=0;
-static int msgid1, msgid2;
+static int msgid_send, msgid_receive;
+
+pthread_t thread_id;
+pthread_mutex_t my_lock;
 
 Gpio* user_button = NULL;
 Gpio* ext_button = NULL;
@@ -36,6 +48,8 @@ Aio* a_pin = NULL;
 MCP9808* sens_temp = NULL;
 MCP9808* sens_temp2 = NULL;
 TSL2591* sens_light = NULL;
+
+void publishSensors(void);
 
 void MQSetup(void);
 
@@ -65,20 +79,47 @@ static int semaphore_v(void);
 static int semaphore_p(void);
 */
 
+void exitRoutine(void) {
+	running=0;
+	alarm(0);
+	user_led->write(0);
+	MQ_sub("end");
+	pthread_join(thread_id, NULL);
+}
+
+void * WorkerThread(void * a)
+{
+	while(running){
+		receiveAnyMessage();
+		printf("Type: %ld\nContent: %s\nTopic: %s\n", QueueMessageBuffer.mesg_type, QueueMessageBuffer.content, QueueMessageBuffer.topic);
+		if ((strncmp(QueueMessageBuffer.topic, "MainControl", 11) == 0) & (strncmp(QueueMessageBuffer.content, "EXIT", 4)==0)){
+			exitRoutine();
+		}
+
+	}
+
+	return NULL;
+}
+
 int main(int argc, char *argv[]){
 	MQSetup();
 	SensorInit();
+	MQ_sub("MainControl");
+
+	/*if (pthread_mutex_init(&my_lock, NULL) != 0)
+	{
+		printf("\n mutex init has failed\n");
+		exit(1);
+	}*/
+
+	pthread_create(&thread_id, NULL, WorkerThread, NULL);
 
 	float w;
-	for (;;) {
+	while (running) {
 		if(!(user_button ->read())){
-			alarm(0);
-			check(user_led -> write(0));
-			MQ_sub("end");
-			exit(1);
+			exitRoutine();
+			continue;
 		}
-		w=a_pin->readFloat();
-		pwm -> write(w/0.67);
 		check(led -> write(ext_button -> read()));
 
 
@@ -98,13 +139,10 @@ int main(int argc, char *argv[]){
 				check(user_led->write(1));
 			}
 			w=a_pin->readFloat();
-			led -> write(w/0.67);
 			w=w*5;
-			printf("Analog Input = %4.2f V\n", w);
-			MQ_pub("Sensor/Temp/1/Val", to_string(sens_temp -> readTempC()));
-			MQ_pub("Sensor/Temp/2/Val", to_string(sens_temp2 -> readTempC()));
-			MQ_pub("Sensor/Lux/1/Val", to_string(sens_light -> getLux()));
-			cout << "-------------------------------------" << endl;
+			pwm -> write(w);
+			MQ_pub("Sensor/Analog/1/Val", to_string(w));
+			publishSensors();
 			flag=0;
 		}
 	}
@@ -112,24 +150,30 @@ int main(int argc, char *argv[]){
 	return 0;
 }
 
+void publishSensors(){
+	MQ_pub("Sensor/Temp/1/Val", to_string(sens_temp -> readTempC()));
+	MQ_pub("Sensor/Temp/2/Val", to_string(sens_temp2 -> readTempC()));
+	MQ_pub("Sensor/Lux/1/Val", to_string(sens_light -> getLux()));
+}
+
 void MQSetup(void){
 
 	// msgget creates a message queue
 	// and returns identifier
 	// msgget used to try to join with the queue from the Handler
-	msgid1 = msgget((key_t)MQ_KEY1, 0666 | IPC_CREAT);
-	if (msgid1 == -1) {
+	msgid_send = msgget((key_t)MQKEY_TOHANDLER, 0666 | IPC_CREAT);
+	if (msgid_send == -1) {
 		fprintf(stderr, "msgget failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
-	msgid2 = msgget((key_t)MQ_KEY2, 0666 | IPC_CREAT);
-	if (msgid2 == -1) {
+	msgid_receive = msgget((key_t)MQKEY_FROMHANDLER, 0666 | IPC_CREAT);
+	if (msgid_receive == -1) {
 		fprintf(stderr, "msgget failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
 
 	printf("Connection Established\n"
-			"Main MQID: %d	&	%d\n", msgid1, msgid2);
+			"Main MQID: %d	&	%d\n", msgid_send, msgid_receive);
 }
 
 void SensorInit (void){
@@ -146,13 +190,10 @@ void SensorInit (void){
 	DIPSW = new Gpio(8);
 	DIPSW -> dir(DIR_IN);
 
-	user_led = new Gpio(1, true, false);
+	user_led = new Gpio(13);
 	user_led->dir(DIR_OUT);
 
-	load = new Gpio(9, true, false);
-	load->dir(DIR_OUT);
-
-	led = new Gpio(0);
+	led = new Gpio(1);
 	led->dir(DIR_OUT);
 
 	pwm = new Pwm(3);
@@ -163,7 +204,7 @@ void SensorInit (void){
 	MQ_sub("Sensor/Temp/1/Config");
 	sens_temp2 = new MCP9808(0x19);
 	MQ_sub("Sensor/Temp/2/Config");
-	sens_temp -> setResolution(MCP9808_Resolution_Half);
+	sens_temp -> setResolution(MCP9808_Resolution_Sixteenth);
 
 	sens_light = new TSL2591();
 	MQ_sub("Sensor/Lux/1/Config");
@@ -173,26 +214,26 @@ void SensorInit (void){
 void MQ_sub(string topic)
 {
 	//Inform that it is a subscribe and to what topic
-	QueueMessage.mesg_type=TYPE_SUB;
+	QueueMessageSend.mesg_type=TYPE_SUB;
 
-    strcpy(QueueMessage.content, "");
-    strcpy(QueueMessage.topic, topic.c_str());
+    strcpy(QueueMessageSend.content, "");
+    strcpy(QueueMessageSend.topic, topic.c_str());
 	sendMessage();
 }
 
 void MQ_pub(string topic, string content)
 {
 	//Inform that it is a publication and to what topic
-	QueueMessage.mesg_type=TYPE_PUB;
+	QueueMessageSend.mesg_type=TYPE_PUB;
 
-	strcpy(QueueMessage.content, content.c_str());
-	strcpy(QueueMessage.topic, topic.c_str());
+	strcpy(QueueMessageSend.content, content.c_str());
+	strcpy(QueueMessageSend.topic, topic.c_str());
 	sendMessage();
 
 }
 
 int sendMessage(void) {
-	if (msgsnd(msgid1, (void *)&QueueMessage, MAX_TEXT, 0) == -1) {
+	if (msgsnd(msgid_send, (void *)&QueueMessageSend, MAX_TEXT, 0) == -1) {
 		fprintf(stderr, "msgsnd failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -200,7 +241,7 @@ int sendMessage(void) {
 }
 
 int receiveNMessage(int long n) {
-	if (msgrcv(msgid2, (void *)&QueueMessage, BUFSIZ, n, 0) == -1) {
+	if (msgrcv(msgid_receive, (void *)&QueueMessageBuffer, BUFSIZ, n, 0) == -1) {
 		fprintf(stderr, "msgrcv failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
@@ -208,7 +249,7 @@ int receiveNMessage(int long n) {
 }
 
 int receiveAnyMessage(void) {
-	if (msgrcv(msgid2, (void *)&QueueMessage, BUFSIZ, 0, 0) == -1) {
+	if (msgrcv(msgid_receive, (void *)&QueueMessageBuffer, BUFSIZ, 0, 0) == -1) {
 		fprintf(stderr, "msgrcv failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
