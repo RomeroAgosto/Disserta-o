@@ -1,7 +1,9 @@
 /*
  * To Exit program send EXIT to MainControl
  *
- */#include <iostream>
+ */
+#include <iostream>
+#include <chrono>
 #include <stdio.h>
 #include <errno.h>
 #include <signal.h>
@@ -13,6 +15,13 @@ using namespace std;
 #include "MCP9808.hpp"
 #include "TSL2591.hpp"
 
+#include<fstream>
+
+//#define DEBUG
+#define MEASURING
+#define MEASURING_LENGHT 7200
+uint times[MEASURING_LENGHT];
+
 using namespace mraa;
 
 /*
@@ -22,6 +31,25 @@ union semun {
 	unsigned short *array;
 };
 */
+
+enum ReadState {
+	ST_READ, ST_CONFSENSOR, ST_ACTUATOR, ST_MAINCONTROL
+};
+
+enum ControlOptions {
+	CO_Option_Invalid,
+	MAINCONTROL, SENSOR, ACTUATOR
+};
+
+enum SensorType {
+	S_Option_Invalid,
+	TEMP, LUX
+};
+
+enum ActuatorType {
+	A_Option_Invalid,
+	LED, PWM
+};
 
 // structures for message queue
 //	Struct to send
@@ -45,7 +73,7 @@ Gpio* led = NULL;
 Gpio* DIPSW =NULL;
 Pwm* pwm = NULL;
 Aio* a_pin = NULL;
-MCP9808* sens_temp = NULL;
+MCP9808* sens_temp1 = NULL;
 MCP9808* sens_temp2 = NULL;
 TSL2591* sens_light = NULL;
 
@@ -80,51 +108,229 @@ static int semaphore_p(void);
 */
 
 void exitRoutine(void) {
-	running=0;
 	alarm(0);
+	running=0;
 	user_led->write(0);
-	MQ_sub("end");
+
+#ifdef MEASURING
+	/*Only used to measure quality and speed of code*/
+	std::ofstream MeasureFile;
+	MeasureFile.open("Measure Results.txt", std::ios::app); //app is append which means it will put the text at the end
+	for(int i=0;i < MEASURING_LENGHT;i++) {
+		cout << times[i] << endl;
+		MeasureFile << times[i] << endl;
+	}
+	MeasureFile.close();
+	/*No Longer part of the measure system */
+#endif
+
 	pthread_join(thread_id, NULL);
+	MQ_sub("end");
 }
 
-void * WorkerThread(void * a)
-{
-	while(running){
-		receiveAnyMessage();
-		printf("Type: %ld\nContent: %s\nTopic: %s\n", QueueMessageBuffer.mesg_type, QueueMessageBuffer.content, QueueMessageBuffer.topic);
-		if ((strncmp(QueueMessageBuffer.topic, "MainControl", 11) == 0) & (strncmp(QueueMessageBuffer.content, "EXIT", 4)==0)){
-			exitRoutine();
-		}
-	//string separation ="/";
-	size_t index2cut;
+ControlOptions resolveOption(string input) {
+    if( input == "MainControl" ) 	return MAINCONTROL;
+    if( input == "Sensor" ) 		return SENSOR;
+    if( input == "Actuator" ) 		return ACTUATOR;
+
+    return CO_Option_Invalid;
+ }
+
+SensorType resolveSensor(string input) {
+	if( input == "Temp" ) 			return TEMP;
+	if( input == "Lux" ) 			return LUX;
+
+	return S_Option_Invalid;
+}
+
+ActuatorType resolveActuator(string input) {
+    if( input == "LED" ) 			return LED;
+    if( input == "PWM" ) 			return PWM;
+
+	return A_Option_Invalid;
+}
+
+string readNextSubTopic(string fullTopic, size_t *startIndex, size_t *endIndex) {
+	string tmp;
+	if((*endIndex=fullTopic.find('/', *startIndex+1))!=(std::string::npos)) {
+		tmp = fullTopic.substr(*startIndex+1,(*endIndex-*startIndex-1));
+		*startIndex = *endIndex;
+		return tmp;
+	}else return fullTopic.substr(*startIndex+1);
+}
+
+void * WorkerThread(void * a) {
+
+	//Initial Read Machine State is START. Update upon state change.
+	ReadState currentState = ST_READ;
+
+	string m_topic;
+	size_t index2cut, lastIndex;
 	string subTopic;
-	while(index2cut=(QueueMessageBuffer.topic.find('/'))!=std::string::npos) {
-		subTopic=QueueMessageBuffer.topic.substr(0,index2cut);
-		switch (subTopic) {
-			case "Sensor" :
-				state = SENSOR;
-				printf("Current State: %d", state);
-			break;	
+
+	while(running){
+		switch (currentState) {
+			case ST_READ :
+				index2cut=0, lastIndex=-1;
+				receiveAnyMessage();
+				m_topic = QueueMessageBuffer.topic;
+#ifdef DEBUG
+				printf("Type: %ld\nContent: %s\nTopic: %s\n", QueueMessageBuffer.mesg_type, QueueMessageBuffer.content, QueueMessageBuffer.topic);
+#endif
+				subTopic = readNextSubTopic(m_topic, &lastIndex, &index2cut);
+
+				switch (resolveOption(subTopic)) {
+					case SENSOR :
+						currentState = ST_CONFSENSOR;
+#ifdef DEBUG
+						printf("Current State: SENSOR\n");
+#endif
+						break;
+
+					case ACTUATOR :
+						currentState = ST_ACTUATOR;
+#ifdef DEBUG
+						printf("Current State: ACTUATOR\n");
+#endif
+						break;
+
+					case MAINCONTROL :
+						currentState = ST_MAINCONTROL;
+#ifdef DEBUG
+						printf("Current State: MAINCONTROL\n");
+#endif
+						break;
+
+					default :
+#ifdef DEBUG
+						printf("Entered Invalid State \"Option\"\n");
+#endif
+						currentState = ST_READ;
+						break;
+				}
+
+				break;
+
+			case ST_CONFSENSOR :
+#ifdef DEBUG
+				printf("Current State: ST_CONFSENSOR\n");
+#endif
+				subTopic = readNextSubTopic(m_topic, &lastIndex, &index2cut);
+				switch(resolveSensor(subTopic)) {
+					case TEMP :
+					{
+						int sensorID = stoi(readNextSubTopic(m_topic, &lastIndex, &index2cut));
+						if(readNextSubTopic(m_topic, &lastIndex, &index2cut)=="Config") {
+							if(readNextSubTopic(m_topic, &lastIndex, &index2cut)=="Res") {
+								if(sensorID==1) {
+#ifdef DEBUG
+									cout << "Changing Resolution of Sensor 1" << endl;
+#endif
+									if(stoi(QueueMessageBuffer.content)==0) sens_temp1 -> setResolution(MCP9808_Resolution_Half);
+									if(stoi(QueueMessageBuffer.content)==1) sens_temp1 -> setResolution(MCP9808_Resolution_Quarter);
+									if(stoi(QueueMessageBuffer.content)==2) sens_temp1 -> setResolution(MCP9808_Resolution_Eighth);
+									if(stoi(QueueMessageBuffer.content)==3) sens_temp1 -> setResolution(MCP9808_Resolution_Sixteenth);
+								}
+								if(sensorID==2) {
+#ifdef DEBUG
+									cout << "Changing Resolution of Sensor 2" << endl;
+#endif
+									if(stoi(QueueMessageBuffer.content)==0) sens_temp2 -> setResolution(MCP9808_Resolution_Half);
+									if(stoi(QueueMessageBuffer.content)==1) sens_temp2 -> setResolution(MCP9808_Resolution_Quarter);
+									if(stoi(QueueMessageBuffer.content)==2) sens_temp2 -> setResolution(MCP9808_Resolution_Eighth);
+									if(stoi(QueueMessageBuffer.content)==3) sens_temp2 -> setResolution(MCP9808_Resolution_Sixteenth);
+								}
+							}
+							if(readNextSubTopic(m_topic, &lastIndex, &index2cut)=="ShutWake") {
+								if(sensorID==1) sens_temp1 -> shutdown_wake(stoi(QueueMessageBuffer.content));
+								if(sensorID==2) sens_temp2 -> shutdown_wake(stoi(QueueMessageBuffer.content));
+							}
+						}
+					}
+						currentState = ST_READ;
+						break;
+
+					case LUX :
+
+						break;
+
+					default :
+#ifdef DEBUG
+						printf("Entered Invalid State \"Type of Sensor\"\n");
+#endif
+						currentState = ST_READ;
+						break;
+				}
+				break;
+
+			case ST_ACTUATOR :
+#ifdef DEBUG
+				printf("Current State: ST_ACTUATOR\n");
+#endif
+				subTopic = readNextSubTopic(m_topic, &lastIndex, &index2cut);
+				switch(resolveActuator(subTopic)) {
+					case LED :
+						if(stoi(QueueMessageBuffer.content)==1) {
+							led -> write(1);
+							break;
+						}
+						if(stoi(QueueMessageBuffer.content)==0) {
+							led -> write(0);
+							break;
+						}
+#ifdef DEBUG
+						printf("Invalid value for LED state, please use 1 or 0\n");
+#endif
+						break;
+
+					case PWM :
+						pwm -> write(stof(QueueMessageBuffer.content)/100);
+						break;
+
+					default :
+#ifdef DEBUG
+						printf("Entered Invalid State \"Type of Actuator\"\n");
+#endif
+						currentState = ST_READ;
+						break;
+
+				}
+				currentState = ST_READ;
+				break;
+
+			case ST_MAINCONTROL:
+#ifdef DEBUG
+				printf("Current State: ST_MAINCONTROL\n");
+#endif
+				if(strncmp(QueueMessageBuffer.content, "EXIT", 4)==0) exitRoutine();
+
+				currentState = ST_READ;
+				break;
 
 			default :
-				state = DEFAULT;
-				printf("Current State: %d", state);
+#ifdef DEBUG
+				printf("Entered Invalid State\n");
+#endif
+				currentState = ST_READ;
+				break;
 		}
+
 	}
 
 	return NULL;
 }
 
 int main(int argc, char *argv[]){
+#ifdef MEASURING
+	/*Only used to measure quality and speed of code*/
+	int countTimes=0;
+	chrono::time_point<chrono::steady_clock> reference, start, end;
+	reference = chrono::steady_clock::now();
+	/*No Longer part of the measure system */
+#endif
 	MQSetup();
 	SensorInit();
 	MQ_sub("MainControl");
-
-	/*if (pthread_mutex_init(&my_lock, NULL) != 0)
-	{
-		printf("\n mutex init has failed\n");
-		exit(1);
-	}*/
 
 	pthread_create(&thread_id, NULL, WorkerThread, NULL);
 
@@ -134,18 +340,23 @@ int main(int argc, char *argv[]){
 			exitRoutine();
 			continue;
 		}
-		check(led -> write(ext_button -> read()));
-
 
 		if (flag) {
-			alarm(1);
+#ifdef MEASURING
+			/*Only used to measure quality and speed of code*/
+			start = chrono::steady_clock::now();
+			/*No Longer part of the measure system */
+#endif
+
+			/*
 			if(DIPSW ->read()){
-				sens_temp -> wake();
+				sens_temp1 -> wake();
 				sens_temp2 -> wake();
 			}else {
-				sens_temp -> shutdown();
+				sens_temp1 -> shutdown();
 				sens_temp2 -> shutdown();
 			}
+			*/
 
 			if(user_led->read()){
 				check(user_led->write(0));
@@ -154,9 +365,23 @@ int main(int argc, char *argv[]){
 			}
 			w=a_pin->readFloat();
 			w=w*5;
-			pwm -> write(w);
 			MQ_pub("Sensor/Analog/1/Val", to_string(w));
 			publishSensors();
+
+#ifdef MEASURING
+			/*Only used to measure quality and speed of code*/
+			end = chrono::steady_clock::now();
+			times [countTimes] = chrono::duration_cast<chrono::microseconds>(start - reference).count();
+			times [countTimes+1] = chrono::duration_cast<chrono::microseconds>(end - reference).count();
+			countTimes+=2;
+			if(countTimes>=MEASURING_LENGHT-1) {
+				printf("Count= %d\n"
+						"DONE!", countTimes);
+				exitRoutine();
+			}
+			/*No Longer part of the measure system */
+#endif
+
 			flag=0;
 		}
 	}
@@ -165,7 +390,7 @@ int main(int argc, char *argv[]){
 }
 
 void publishSensors(){
-	MQ_pub("Sensor/Temp/1/Val", to_string(sens_temp -> readTempC()));
+	MQ_pub("Sensor/Temp/1/Val", to_string(sens_temp1 -> readTempC()));
 	MQ_pub("Sensor/Temp/2/Val", to_string(sens_temp2 -> readTempC()));
 	MQ_pub("Sensor/Lux/1/Val", to_string(sens_light -> getLux()));
 }
@@ -177,17 +402,22 @@ void MQSetup(void){
 	// msgget used to try to join with the queue from the Handler
 	msgid_send = msgget((key_t)MQKEY_TOHANDLER, 0666 | IPC_CREAT);
 	if (msgid_send == -1) {
+#ifdef DEBUG
 		fprintf(stderr, "msgget failed with error: %d\n", errno);
+#endif
 		exit(EXIT_FAILURE);
 	}
 	msgid_receive = msgget((key_t)MQKEY_FROMHANDLER, 0666 | IPC_CREAT);
 	if (msgid_receive == -1) {
+#ifdef DEBUG
 		fprintf(stderr, "msgget failed with error: %d\n", errno);
+#endif
 		exit(EXIT_FAILURE);
 	}
-
+#ifdef DEBUG
 	printf("Connection Established\n"
 			"Main MQID: %d	&	%d\n", msgid_send, msgid_receive);
+#endif
 }
 
 void SensorInit (void){
@@ -209,19 +439,25 @@ void SensorInit (void){
 
 	led = new Gpio(1);
 	led->dir(DIR_OUT);
+	MQ_sub("Actuator/LED/1/#");
 
 	pwm = new Pwm(3);
+	MQ_sub("Actuator/PWM/1/#");
 
 	a_pin = new Aio(0);
 
-	sens_temp = new MCP9808();
-	MQ_sub("Sensor/Temp/1/Config");
+	sens_temp1 = new MCP9808();
+	MQ_sub("Sensor/Temp/1/Config/#");
+	sens_temp1 -> wake();
+	sens_temp1 -> setResolution(MCP9808_Resolution_Sixteenth);
+
 	sens_temp2 = new MCP9808(0x19);
-	MQ_sub("Sensor/Temp/2/Config");
-	sens_temp -> setResolution(MCP9808_Resolution_Sixteenth);
+	MQ_sub("Sensor/Temp/2/Config/#");
+	sens_temp2 -> wake();
+	sens_temp2 -> setResolution(MCP9808_Resolution_Sixteenth);
 
 	sens_light = new TSL2591();
-	MQ_sub("Sensor/Lux/1/Config");
+	MQ_sub("Sensor/Lux/1/Config/#");
 
 }
 
@@ -248,7 +484,9 @@ void MQ_pub(string topic, string content)
 
 int sendMessage(void) {
 	if (msgsnd(msgid_send, (void *)&QueueMessageSend, MAX_TEXT, 0) == -1) {
+#ifdef DEBUG
 		fprintf(stderr, "msgsnd failed\n");
+#endif
 		exit(EXIT_FAILURE);
 	}
 	return 0;
@@ -256,7 +494,9 @@ int sendMessage(void) {
 
 int receiveNMessage(int long n) {
 	if (msgrcv(msgid_receive, (void *)&QueueMessageBuffer, BUFSIZ, n, 0) == -1) {
+#ifdef DEBUG
 		fprintf(stderr, "msgrcv failed with error: %d\n", errno);
+#endif
 		exit(EXIT_FAILURE);
 	}
 	return 0;
@@ -264,7 +504,9 @@ int receiveNMessage(int long n) {
 
 int receiveAnyMessage(void) {
 	if (msgrcv(msgid_receive, (void *)&QueueMessageBuffer, BUFSIZ, 0, 0) == -1) {
+#ifdef DEBUG
 		fprintf(stderr, "msgrcv failed with error: %d\n", errno);
+#endif
 		exit(EXIT_FAILURE);
 	}
 	return 0;
@@ -279,6 +521,7 @@ void check(int err)
 
 void sigalrm_handler(int sig)
 {
+	alarm(1);
 	flag=1;
 }
 
@@ -295,7 +538,9 @@ static void del_semvalue(void){
 
 	union semun sem_union;
 	if (semctl(sem_id, 0, IPC_RMID, sem_union) == -1)
+#ifdef DEBUG
 		fprintf(stderr, "Failed to delete semaphore\n");
+#endif
 }
 
 static int semaphore_v(void){
@@ -305,7 +550,9 @@ static int semaphore_v(void){
 	sem_b.sem_op = 1;
 	sem_b.sem_flg = SEM_UNDO;
 	if (semop(sem_id, &sem_b, 1) == -1) {
+#ifdef DEBUG
 		fprintf(stderr, "semaphore_v failed\n");
+#endif
 		return(0);
 	}
 	return(1);
@@ -318,7 +565,9 @@ static int semaphore_p(void){
 	sem_b.sem_op = -1;
 	sem_b.sem_flg = SEM_UNDO;
 	if (semop(sem_id, &sem_b, 1) == -1) {
+#ifdef DEBUG
 		fprintf(stderr, "semaphore_p failed\n");
+#endif
 		return(0);
 	}
 	return(1);

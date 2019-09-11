@@ -4,6 +4,8 @@
 
 #define MCP9808_REG_CONFIG 				(0x01)      ///< MCP9808 config register
 
+#define MCP9808_REG_CONFIG_HYS_UPPER	(0x0400)	///< Upper Hysteresis bit
+#define MCP9808_REG_CONFIG_HYS_LOWER	(0x0200)	///< Lowwer Hysteresis bit
 #define MCP9808_REG_CONFIG_SHUTDOWN 	(0x0100)   	///< shutdown config
 #define MCP9808_REG_CONFIG_CRITLOCKED 	(0x0080) 	///< critical trip lock
 #define MCP9808_REG_CONFIG_WINLOCKED 	(0x0040)  	///< alarm window lock
@@ -48,6 +50,7 @@ public:
 private:
 	uint8_t myAddress;
 	MCP9808_Resolution_t myResolution;
+	uint8_t read8 (uint8_t reg);
 	uint16_t read16 (uint8_t reg);
 	uint8_t getRealResolution();
 };

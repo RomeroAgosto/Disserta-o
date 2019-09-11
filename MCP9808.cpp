@@ -52,11 +52,11 @@ void MCP9808::shutdown_wake(bool sw) {
   uint16_t tmp_shutdown;
   uint16_t tmp_register = read16(MCP9808_REG_CONFIG);
   MCP9808Sensor -> address(myAddress);
-  if (sw == false) {
+  if (sw == true) {
     tmp_shutdown = tmp_register | MCP9808_REG_CONFIG_SHUTDOWN;
     MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, tmp_shutdown);
   }
-  if (sw == true) {
+  if (sw == false) {
     tmp_shutdown = tmp_register & ~MCP9808_REG_CONFIG_SHUTDOWN;
     MCP9808Sensor -> writeWordReg(MCP9808_REG_CONFIG, tmp_shutdown);
   }
@@ -67,6 +67,11 @@ void MCP9808::shutdown() { MCP9808::shutdown_wake(false); }
 void MCP9808::wake() {
   MCP9808::shutdown_wake(true);
   usleep(250);
+}
+
+uint8_t MCP9808::read8 (uint8_t reg) {
+	MCP9808Sensor -> address(myAddress);
+	return MCP9808Sensor -> readReg(reg);
 }
 
 uint16_t MCP9808::read16 (uint8_t reg) {
@@ -80,6 +85,5 @@ uint16_t MCP9808::read16 (uint8_t reg) {
 }
 
 uint8_t MCP9808::getRealResolution() {
-	MCP9808Sensor -> address(myAddress);
-	return MCP9808Sensor -> readReg(MCP9808_REG_RESOLUTION);
+	return read8(MCP9808_REG_RESOLUTION);
 }
