@@ -7,22 +7,24 @@
 #include <stdio.h>
 #include <errno.h>
 #include <signal.h>
-using namespace std;
 #include <string.h>
 #include <pthread.h>
 #include "mraa.hpp"
 #include "C:\Users\Ricardo\eclipse-workspace\MQ Defines.h"
 #include "MCP9808.hpp"
 #include "TSL2591.hpp"
-
 #include<fstream>
 
+using namespace mraa;
+using namespace std;
+using namespace chrono;
+
 //#define DEBUG
-#define MEASURING
+//#define MEASURING
+#ifdef MEASURING
 #define MEASURING_LENGHT 7200
 uint times[MEASURING_LENGHT];
-
-using namespace mraa;
+#endif
 
 /*
 union semun {
@@ -58,7 +60,6 @@ struct mesg_buffer QueueMessageSend;
 struct mesg_buffer QueueMessageBuffer;
 
 char running=1;
-
 uint8_t flag=0;
 static int msgid_send, msgid_receive;
 
@@ -114,18 +115,22 @@ void exitRoutine(void) {
 
 #ifdef MEASURING
 	/*Only used to measure quality and speed of code*/
-	std::ofstream MeasureFile;
-	MeasureFile.open("Measure Results.txt", std::ios::app); //app is append which means it will put the text at the end
+	time_t t = time(0);   // get time now
+	struct tm * now = localtime( & t );
+    char fileName [80];
+    strftime (fileName,80,"Measurement_Results_%d_%m_%y_%H_%M.txt",now);
+    cout << fileName << endl;
+	ofstream MeasureFile;
+	MeasureFile.open(fileName, std::ios::app); //app is append which means it will put the text at the end
 	for(int i=0;i < MEASURING_LENGHT;i++) {
-		cout << times[i] << endl;
 		MeasureFile << times[i] << endl;
 	}
 	MeasureFile.close();
 	/*No Longer part of the measure system */
 #endif
 
-	pthread_join(thread_id, NULL);
 	MQ_sub("end");
+	pthread_join(thread_id, NULL);
 }
 
 ControlOptions resolveOption(string input) {
@@ -321,20 +326,23 @@ void * WorkerThread(void * a) {
 }
 
 int main(int argc, char *argv[]){
+	time_point<steady_clock> reference;
+	reference = chrono::steady_clock::now();
+	float w;
+
 #ifdef MEASURING
 	/*Only used to measure quality and speed of code*/
 	int countTimes=0;
-	chrono::time_point<chrono::steady_clock> reference, start, end;
-	reference = chrono::steady_clock::now();
+	time_point<steady_clock> start, end;
 	/*No Longer part of the measure system */
 #endif
+
 	MQSetup();
 	SensorInit();
 	MQ_sub("MainControl");
 
 	pthread_create(&thread_id, NULL, WorkerThread, NULL);
 
-	float w;
 	while (running) {
 		if(!(user_button ->read())){
 			exitRoutine();
@@ -344,7 +352,7 @@ int main(int argc, char *argv[]){
 		if (flag) {
 #ifdef MEASURING
 			/*Only used to measure quality and speed of code*/
-			start = chrono::steady_clock::now();
+			start = steady_clock::now();
 			/*No Longer part of the measure system */
 #endif
 
@@ -370,9 +378,9 @@ int main(int argc, char *argv[]){
 
 #ifdef MEASURING
 			/*Only used to measure quality and speed of code*/
-			end = chrono::steady_clock::now();
-			times [countTimes] = chrono::duration_cast<chrono::microseconds>(start - reference).count();
-			times [countTimes+1] = chrono::duration_cast<chrono::microseconds>(end - reference).count();
+			end = steady_clock::now();
+			times [countTimes] = duration_cast<microseconds>(start - reference).count();
+			times [countTimes+1] = duration_cast<microseconds>(end - reference).count();
 			countTimes+=2;
 			if(countTimes>=MEASURING_LENGHT-1) {
 				printf("Count= %d\n"
