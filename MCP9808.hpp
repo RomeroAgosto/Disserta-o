@@ -39,10 +39,13 @@ MCP9808_Resolution_t;
 class MCP9808 {
 public:
 	MCP9808(uint8_t address = MCP9808_I2CADDR_DEFAULT);
+
 	float readTempC();
 	float readTempF();
+
 	void setResolution(MCP9808_Resolution_t value);
 	MCP9808_Resolution_t getResolution();
+
 	void shutdown_wake(bool sw);
 	void shutdown();
 	void wake();
