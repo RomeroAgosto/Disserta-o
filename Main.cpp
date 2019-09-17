@@ -19,7 +19,7 @@ using namespace std;
 using namespace chrono;
 
 //#define DEBUG
-#define MEASURING
+//#define MEASURING
 #ifdef MEASURING
 #define MEASURING_LENGHT 7200
 uint times[MEASURING_LENGHT];
@@ -168,6 +168,7 @@ void * WorkerThread(void * a) {
 	string m_topic;
 	size_t index2cut, lastIndex;
 	string subTopic;
+	int sensorID;
 
 	while(running){
 		switch (currentState) {
@@ -220,29 +221,25 @@ void * WorkerThread(void * a) {
 				switch(resolveSensor(subTopic)) {
 					case TEMP :
 					{
-						int sensorID = stoi(readNextSubTopic(m_topic, &lastIndex, &index2cut));
-						if(readNextSubTopic(m_topic, &lastIndex, &index2cut)=="Config") {
-							if(readNextSubTopic(m_topic, &lastIndex, &index2cut)=="Res") {
+						sensorID = stoi(readNextSubTopic(m_topic, &lastIndex, &index2cut));
+						subTopic = readNextSubTopic(m_topic, &lastIndex, &index2cut);
+						if(subTopic=="Config") {
+							subTopic = readNextSubTopic(m_topic, &lastIndex, &index2cut);
+							if(subTopic=="Res") {
 								if(sensorID==1) {
 #ifdef DEBUG
 									cout << "Changing Resolution of Sensor 1" << endl;
 #endif
-									if(stoi(QueueMessageBuffer.content)==0) sens_temp1 -> setResolution(MCP9808_Resolution_Half);
-									if(stoi(QueueMessageBuffer.content)==1) sens_temp1 -> setResolution(MCP9808_Resolution_Quarter);
-									if(stoi(QueueMessageBuffer.content)==2) sens_temp1 -> setResolution(MCP9808_Resolution_Eighth);
-									if(stoi(QueueMessageBuffer.content)==3) sens_temp1 -> setResolution(MCP9808_Resolution_Sixteenth);
-								}
+									sens_temp1 -> setResolution(static_cast<MCP9808_Resolution_t>(stoi(QueueMessageBuffer.content)));
+									}
 								if(sensorID==2) {
 #ifdef DEBUG
 									cout << "Changing Resolution of Sensor 2" << endl;
 #endif
-									if(stoi(QueueMessageBuffer.content)==0) sens_temp2 -> setResolution(MCP9808_Resolution_Half);
-									if(stoi(QueueMessageBuffer.content)==1) sens_temp2 -> setResolution(MCP9808_Resolution_Quarter);
-									if(stoi(QueueMessageBuffer.content)==2) sens_temp2 -> setResolution(MCP9808_Resolution_Eighth);
-									if(stoi(QueueMessageBuffer.content)==3) sens_temp2 -> setResolution(MCP9808_Resolution_Sixteenth);
-								}
+									sens_temp1 -> setResolution(static_cast<MCP9808_Resolution_t>(stoi(QueueMessageBuffer.content)));
+									}
 							}
-							if(readNextSubTopic(m_topic, &lastIndex, &index2cut)=="ShutWake") {
+							if(subTopic=="ShutWake") {
 								if(sensorID==1) sens_temp1 -> shutdown_wake(stoi(QueueMessageBuffer.content));
 								if(sensorID==2) sens_temp2 -> shutdown_wake(stoi(QueueMessageBuffer.content));
 							}
@@ -252,7 +249,21 @@ void * WorkerThread(void * a) {
 						break;
 
 					case LUX :
+					{
+						sensorID = stoi(readNextSubTopic(m_topic, &lastIndex, &index2cut));
+						subTopic = readNextSubTopic(m_topic, &lastIndex, &index2cut);
+						if(subTopic=="Config") {
+							subTopic = readNextSubTopic(m_topic, &lastIndex, &index2cut);
+							if(subTopic=="Gain") {
 
+							}
+							if(subTopic=="Integration") {
+
+							}
+						}
+
+					}
+						currentState = ST_READ;
 						break;
 
 					default :
