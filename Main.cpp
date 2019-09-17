@@ -6,7 +6,6 @@
 #include <chrono>
 #include <stdio.h>
 #include <errno.h>
-#include <signal.h>
 #include <string.h>
 #include <pthread.h>
 #include "mraa.hpp"
@@ -20,7 +19,7 @@ using namespace std;
 using namespace chrono;
 
 //#define DEBUG
-//#define MEASURING
+#define MEASURING
 #ifdef MEASURING
 #define MEASURING_LENGHT 7200
 uint times[MEASURING_LENGHT];
@@ -96,8 +95,6 @@ int receiveAnyMessage(void);
 
 void check(int err);
 
-void sigalrm_handler(int sig);
-
 /*
 static int set_semvalue(void);
 
@@ -109,7 +106,6 @@ static int semaphore_p(void);
 */
 
 void exitRoutine(void) {
-	alarm(0);
 	running=0;
 	user_led->write(0);
 
@@ -329,6 +325,10 @@ int main(int argc, char *argv[]){
 	time_point<steady_clock> reference;
 	reference = chrono::steady_clock::now();
 	float w;
+	steady_clock::time_point t1, t2;
+
+	int tickduration = 1000; // 1000 ms or 1 s per tick
+	int timeduration;
 
 #ifdef MEASURING
 	/*Only used to measure quality and speed of code*/
@@ -343,10 +343,19 @@ int main(int argc, char *argv[]){
 
 	pthread_create(&thread_id, NULL, WorkerThread, NULL);
 
+	t1 = steady_clock::now();
 	while (running) {
 		if(!(user_button ->read())){
 			exitRoutine();
 			continue;
+		}
+		t2 = steady_clock::now();
+		timeduration = duration_cast<duration<int, milli>>(t2 - t1).count();
+
+		if (timeduration >= tickduration)
+		{
+			t1 = steady_clock::now();
+			flag=1;
 		}
 
 		if (flag) {
@@ -429,9 +438,6 @@ void MQSetup(void){
 }
 
 void SensorInit (void){
-
-	signal(SIGALRM, &sigalrm_handler);
-	alarm(1);
 
 	user_button = new Gpio(63, true, true);
 	user_button->dir(DIR_IN);
@@ -525,12 +531,6 @@ void check(int err)
 	if (err<0) {
 		exit(-2);
 	}
-}
-
-void sigalrm_handler(int sig)
-{
-	alarm(1);
-	flag=1;
 }
 
 /*
