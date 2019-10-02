@@ -18,6 +18,13 @@ using namespace mraa;
 using namespace std;
 using namespace chrono;
 
+//Time Definitions
+#define NS_IN_SEC 1000000000L
+
+#define PERIOD_NS (1000*1000*1000) 	// Period (ns component)
+#define PERIOD_S (0)			// Period (seconds component)
+
+
 //#define DEBUG
 //#define MEASURING
 #ifdef MEASURING
@@ -94,6 +101,10 @@ int receiveNMessage(int long n);
 int receiveAnyMessage(void);
 
 void check(int err);
+
+//Timer Auxiliary Functions
+struct  timespec TsAdd(struct  timespec  ts1, struct  timespec  ts2);
+struct  timespec TsSub(struct  timespec  ts1, struct  timespec  ts2);
 
 /*
 static int set_semvalue(void);
@@ -333,13 +344,28 @@ void * WorkerThread(void * a) {
 }
 
 int main(int argc, char *argv[]){
+
+	/* Timespec variables to manage time */
+	struct timespec ts,tr,ta, tp;
+
+	/* Set absolute activation time of first instance */
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	tp.tv_nsec = PERIOD_NS;
+	tp.tv_sec = PERIOD_S;
+	ts = TsAdd(ts,tp);
+
+	/*
 	time_point<steady_clock> reference;
 	reference = chrono::steady_clock::now();
+	*/
 	float w;
+
+	/*
 	steady_clock::time_point t1, t2;
 
 	int tickduration = 1000; // 1000 ms or 1 s per tick
 	int timeduration;
+	*/
 
 #ifdef MEASURING
 	/*Only used to measure quality and speed of code*/
@@ -354,12 +380,19 @@ int main(int argc, char *argv[]){
 
 	pthread_create(&thread_id, NULL, WorkerThread, NULL);
 
-	t1 = steady_clock::now();
+	//t1 = steady_clock::now();
 	while (running) {
+		/* Wait until next cycle */
+		clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME,&ts,&tr);
+		clock_gettime(CLOCK_MONOTONIC, &ta);
+		ts = TsAdd(ts,tp);
+
 		if(!(user_button ->read())){
 			exitRoutine();
 			continue;
 		}
+
+		/*
 		t2 = steady_clock::now();
 		timeduration = duration_cast<duration<int, milli>>(t2 - t1).count();
 
@@ -368,50 +401,48 @@ int main(int argc, char *argv[]){
 			t1 = steady_clock::now();
 			flag=1;
 		}
-
-		if (flag) {
+		*/
 #ifdef MEASURING
-			/*Only used to measure quality and speed of code*/
-			start = steady_clock::now();
-			/*No Longer part of the measure system */
+		/*Only used to measure quality and speed of code*/
+		start = steady_clock::now();
+		/*No Longer part of the measure system */
 #endif
 
-			/*
-			if(DIPSW ->read()){
-				sens_temp1 -> wake();
-				sens_temp2 -> wake();
-			}else {
-				sens_temp1 -> shutdown();
-				sens_temp2 -> shutdown();
-			}
-			*/
-
-			if(user_led->read()){
-				check(user_led->write(0));
-			} else {
-				check(user_led->write(1));
-			}
-			w=a_pin->readFloat();
-			w=w*5;
-			MQ_pub("Sensor/Analog/1/Val", to_string(w));
-			publishSensors();
-
-#ifdef MEASURING
-			/*Only used to measure quality and speed of code*/
-			end = steady_clock::now();
-			times [countTimes] = duration_cast<microseconds>(start - reference).count();
-			times [countTimes+1] = duration_cast<microseconds>(end - reference).count();
-			countTimes+=2;
-			if(countTimes>=MEASURING_LENGHT-1) {
-				printf("Count= %d\n"
-						"DONE!", countTimes);
-				exitRoutine();
-			}
-			/*No Longer part of the measure system */
-#endif
-
-			flag=0;
+		/*
+		if(DIPSW ->read()){
+			sens_temp1 -> wake();
+			sens_temp2 -> wake();
+		}else {
+			sens_temp1 -> shutdown();
+			sens_temp2 -> shutdown();
 		}
+		*/
+
+		if(user_led->read()){
+			check(user_led->write(0));
+		} else {
+			check(user_led->write(1));
+		}
+		w=a_pin->readFloat();
+		w=w*5;
+		MQ_pub("Sensor/Analog/1/Val", to_string(w));
+		publishSensors();
+
+#ifdef MEASURING
+		/*Only used to measure quality and speed of code*/
+		end = steady_clock::now();
+		times [countTimes] = duration_cast<microseconds>(start - reference).count();
+		times [countTimes+1] = duration_cast<microseconds>(end - reference).count();
+		countTimes+=2;
+		if(countTimes>=MEASURING_LENGHT-1) {
+			printf("Count= %d\n"
+					"DONE!", countTimes);
+			exitRoutine();
+		}
+		/*No Longer part of the measure system */
+#endif
+
+		flag=0;
 	}
 
 	return 0;
@@ -542,6 +573,44 @@ void check(int err)
 	if (err<0) {
 		exit(-2);
 	}
+}
+
+struct  timespec  TsAdd(struct  timespec  ts1, struct  timespec  ts2){
+
+    struct  timespec  tr;
+
+	// Add the two timespec variables
+    	tr.tv_sec = ts1.tv_sec + ts2.tv_sec ;
+    	tr.tv_nsec = ts1.tv_nsec + ts2.tv_nsec ;
+	// Check for nsec overflow
+	if (tr.tv_nsec >= NS_IN_SEC) {
+        	tr.tv_sec++ ;
+		tr.tv_nsec = tr.tv_nsec - NS_IN_SEC ;
+    	}
+
+    return (tr) ;
+}
+
+struct  timespec  TsSub (struct  timespec  ts1, struct  timespec  ts2) {
+  struct  timespec  tr;
+
+  // Subtract second arg from first one
+  if ((ts1.tv_sec < ts2.tv_sec) || ((ts1.tv_sec == ts2.tv_sec) && (ts1.tv_nsec <= ts2.tv_nsec))) {
+    // Result would be negative. Return 0
+    tr.tv_sec = tr.tv_nsec = 0 ;
+  } else {
+	// If T1 > T2, proceed
+        tr.tv_sec = ts1.tv_sec - ts2.tv_sec ;
+        if (ts1.tv_nsec < ts2.tv_nsec) {
+            tr.tv_nsec = ts1.tv_nsec + NS_IN_SEC - ts2.tv_nsec ;
+            tr.tv_sec-- ;
+        } else {
+            tr.tv_nsec = ts1.tv_nsec - ts2.tv_nsec ;
+        }
+    }
+
+    return (tr) ;
+
 }
 
 /*
