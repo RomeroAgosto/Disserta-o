@@ -26,7 +26,7 @@ using namespace chrono;
 
 
 //#define DEBUG
-//#define MEASURING
+#define MEASURING
 #ifdef MEASURING
 #define MEASURING_LENGHT 7200
 uint times[MEASURING_LENGHT];
@@ -354,10 +354,9 @@ int main(int argc, char *argv[]){
 	tp.tv_sec = PERIOD_S;
 	ts = TsAdd(ts,tp);
 
-	/*
 	time_point<steady_clock> reference;
 	reference = chrono::steady_clock::now();
-	*/
+
 	float w;
 
 	/*
