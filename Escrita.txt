@@ -1,0 +1,659 @@
+%
+% uaThesis example (for a thesis written in Portuguese)
+%
+% the complete list of options and commands can be found in uaThesis.sty
+%
+
+\documentclass[11pt,twoside,a4paper]{report}
+\usepackage[DETI,newLogo]{uaThesis}
+
+\def\ThesisYear{2019}
+
+% optional packages
+\usepackage[english]{babel}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xspace}% used by \sigla
+
+\usepackage{textcomp}
+
+% optional (comment to use default)s
+%   depth of the table of contents
+%     1 ... chapther and sections
+%     2 ... chapters, sections, and subsections
+%     3 ... chapters, sections, subsections, and subsubsections
+\setcounter{tocdepth}{3}
+
+% optional (comment to used default)
+%   horizontal line to separate floats (figures and tables) from text
+\def\topfigrule{\kern 7.8pt \hrule width\textwidth\kern -8.2pt\relax}
+\def\dblfigrule{\kern 7.8pt \hrule width\textwidth\kern -8.2pt\relax}
+\def\botfigrule{\kern -7.8pt \hrule width\textwidth\kern 8.2pt\relax}
+
+% custom macros (could also be defined using \newcommand)
+\def\I{\mathtt{i}}         % one possible way to represent $\sqrt{-1}$
+\def\Exp#1{e^{2\pi\I #1}}  % argument inside braces, i.e., "{}"
+\def\EXP#1.{e^{2\pi\I #1}} % argument finishes when a full stop is encountered, i.e., "."
+\def\sigla{\LaTeX\xspace}  % use as "blabla \sigla blabla (no need to do "blabla \sigla\ blabla"
+
+\def\AddVMargin#1{\setbox0=\hbox{#1}%
+                  \dimen0=\ht0\advance\dimen0 by 2pt\ht0=\dimen0%
+                  \dimen0=\dp0\advance\dimen0 by 2pt\dp0=\dimen0%
+                  \box0}   % add extra vertical space above and below the argument (#1)
+\def\Header#1#2{\setbox1=\hbox{#1}\setbox2=\hbox{#2}%
+           \ifdim\wd1>\wd2\dimen0=\wd1\else\dimen0=\wd2\fi%
+           \AddVMargin{\parbox{\dimen0}{\centering #1\\#2}}} % put #1 on top #2
+
+
+\begin{document}
+
+%
+% Cover page (use only one of the first two \TitlePage)
+%
+
+% First alternative, with a figure
+\TitlePage
+  %\GRID  % for debugging ONLY
+  \HEADER{\BAR\FIG{\includegraphics[height=60mm]{uaLogoOld}}} % the \FIG{} is optional
+         {\ThesisYear}
+  \TITLE{Jo\~ao \newline Sim\~oes}
+        {Validação de Infra-Estruturas de Rede para a Indústria 4.0}
+\EndTitlePage
+\titlepage\ \endtitlepage % empty page
+
+%
+% Initial thesis pages
+%
+
+\TitlePage
+  \HEADER{}{\ThesisYear}
+  \TITLE{Jo\~ao \newline Sim\~oes}
+        {Validação de Infra-Estruturas de rede para a Indústria 4.0}
+  \vspace*{15mm}
+  \TEXT{}
+       {Disserta\c c\~ao apresentada \`a Universidade de Aveiro para cumprimento dos requesitos
+        necess\'arios \`a obten\c c\~ao do grau de Mestre em Engenharia Eletrónica e Telecomunicações, realizada sob a orienta\c c\~ao
+        cient\'\i fica do Professore Doctor Pedro Fonseca (orientador), Professor Auxiliar do Departamento de Eletrónica, Telecomunicações e Informática da Universidade de Aveiro e do Professor Doctor Paulo Pedreiras (co-orientador), Professor Auxiliar do Departamento de Eletrónica, Telecomunicações e Informática da Universidade de Aveiro}
+\EndTitlePage
+\titlepage\ \endtitlepage % empty page
+
+\TitlePage
+  \vspace*{55mm}
+  \TEXT{\textbf{o j\'uri~/~the jury\newline}}
+       {}
+  \TEXT{presidente~/~president}
+       {\textbf{ABC}\newline {\small
+        Professor Catedr\'atico da Universidade de Aveiro (por delega\c c\~ao da Reitora da
+        Universidade de Aveiro)}}
+  \vspace*{5mm}
+  \TEXT{vogais~/~examiners committee}
+       {\textbf{DEF}\newline {\small
+        Professor Catedr\'atico da Universidade de Aveiro (orientador)}}
+  \vspace*{5mm}
+  \TEXT{}
+       {\textbf{GHI}\newline {\small
+        Professor associado da Universidade J (co-orientador)}}
+  \vspace*{5mm}
+  \TEXT{}
+       {\textbf{KLM}\newline {\small
+        Professor Catedr\'atico da Universidade N}}
+\EndTitlePage
+\titlepage\ \endtitlepage % empty page
+
+\TitlePage
+  \vspace*{55mm}
+  \TEXT{\textbf{agradecimentos~/\newline acknowledgements}}
+       {\'E com muito gosto que aproveito esta oportunidade para agradecer a todos os que me
+        ajudaram durante este longos e penosos anos, cheios de altos e baixos (mais baixos que
+        altos)\ldots}
+  \TEXT{}
+       {Desejo tamb\'em pedir desculpa a todos que tiveram de suportar o meu desinteresse pelas
+        tarefas mundanas do dia-a-dia, \ldots}
+\EndTitlePage
+\titlepage\ \endtitlepage % empty page
+
+\TitlePage
+  \vspace*{55mm}
+  \TEXT{\textbf{Resumo}}
+       {Nos dias que correm, \'e frequente um trabalho ser avaliado pela sua apar\^encia em vez de
+        o ser pelo seu conte\'udo. Sendo assim, sem descurar este \'ultimo, nesta tese descrevemos
+        maneiras revolucion\'arias de transformar um documento s\'olido e austero num documento
+        s\'olido e belo, capaz de fazer chorar de alegria (ou de inveja) qualquer leitor, mesmo
+        quando este n\~ao percebe nada do que l\'a est\'a escrito.}
+  \TEXT{}
+       {A explora\c c\~ao de novas descobertas na \'area da percep\c c\~ao visual, nomeadamente
+        no que se refere \`a aprecia\c c\~ao de obras de arte geniais, \ldots}
+\EndTitlePage
+\titlepage\ \endtitlepage % empty page
+
+\TitlePage
+  \vspace*{55mm}
+  \TEXT{\textbf{Abstract}}
+       {Nowadays, it is usual to evaluate a work \ldots}
+\EndTitlePage
+\titlepage\ \endtitlepage % empty page
+
+
+%
+% Tables of contents, of figures, ...
+%
+
+\pagenumbering{roman}
+\tableofcontents
+
+\cleardoublepage
+\listoffigures
+
+\cleardoublepage
+\listoftables
+
+
+% The chapters (usually written using the isolatin font encoding ...)
+
+\cleardoublepage
+\pagenumbering{arabic}
+\chapter{Introduction}
+
+Every industry is always in need of improvement, and the manufacturing industry is no exception. When there are new innovations and novel ways of perceiving the world that combined create a profound change in economic and social structures it is called an industrial revolution. \cite{IndustrialRevolutionKlaus}
+
+We are currently upon the fourth industrial revolution. Industry 4.0 aims to integrate the Internet of Things (IoT) into industrial environments creating Industrial Internet of Things (IIoT). With IIoT it is possible to have production with higher quality and productivity, create production lines that are more flexible and efficient, since it allows the industry to switch from preventive maintenance to predictive maintenance, also it allows the creation of new services and business models and new labor market opportunities.
+
+\bigskip
+The origin of Industry 4.0 was in the Germany with "Industrie 4.0" but nowadays there are other leading industrial countries actively contributing for Industry 4.0, such as Japan with the "Society 5.0" and others, such as Austria, Switzerland and Canada.
+
+\section{Context}
+In Portugal the government launched the initiative "Indústria 4.0" and there is also an initiative promoted by the Portuguese Industry of Manufacturing Technologies called Produtech since 2011. 
+
+Produtech is a cluster comprised of companies that develop and market products and services that enable the manufacturing industry to meet the requirements of sustainability and competitiveness in national and international markets. \cite{ProdutechDesc}
+
+\bigskip
+This dissertation work was made in integration with the University of Aveiro team that is part of the project Produtech SIF which is the project of Produtech that focuses on industry and preparing the Portuguese industry for the forth industrial revolution. 
+
+The use cases under the scope of this dissertation are factories that are already functional and are being retrofitted to be compliant with Industry 4.0. The part that this work focuses on is the creation of a cyber-physical production system, to achieve such goal it is needed the sensorization of all parts of the physical world.
+
+As part of the sensorization process many smart nodes need to be added to the network and the sensor data collected and sent to a cloud storage.
+
+\section{Motivation}
+In an IoT environment many sensors and actuators are deployed, which are connected to the network via a node, this node need the ability to connect sensors and actuators to the network.
+
+When deploying an IIoT, several nodes need to be deployed, this can be an expensive process because PLCs are expensive, although cheaper alternatives are coming to market such as the IoT 2000 by Siemens. \cite{IoT2000}
+
+Since the IoT 2000 is relatively new there is still a lack of code developed for it, so my objective is to enable it to become a smart node using a transversal programming language C and C++. To do so it needs to communicate with sensors and actuators via the most common interfaces such as general digital and analog input and output and the I$^2$C and SPI buses and be able to communicate with the network. 
+
+\section{Structure}
+This dissertation starts by introducing the concept of Industry 4.0, then an overview of the Produtech cluster and Produtech SIF project. Next the motivation and objectives of this work are described and from this point forward the dissertation structure is organized as follows:
+
+\bigskip
+In chapter 2, related concepts are explained. The chapter starts by explaining in more detail Industry 4.0 is explained in more detail. Additionally, RAMI 4.0 and ISA 95 are presented.
+
+\bigskip
+In chapter 3, an architecture of a cyber-physical system is developed using two Portuguese factories as use cases and generalizing a model from them.
+
+\bigskip
+In chapter 4, the implementation of a smart node in an IoT2020 is described. (Sujeito a alterações, estou a pensar dividir em várias partes, main process, aquisição de dados, MQTT handler tratamento das mensagens MQTT, Node-Red interface)
+
+\cleardoublepage
+\chapter{Background and related work}
+\section{Industry 4.0}
+Throughout history there have been 3 industrial revolutions, the first being the transition from hand production to machine production using steam and water engines. Since ideas took a long time to spread, this revolution occurred at different times in different places and happened between late 18th century and early 19th century.  
+
+The second industrial revolution is marked by the introduction of electricity and electric machines and assembly lines, the third with technologies such as computer, microelectronics, telecommunications created the digital revolution. The fourth industrial revolution will be the arrival of cyber-physical systems (CPS), the Internet of Things (IoT) and the Internet of Services (IoS) to the manufacturing environment. 
+
+Industry 4.0 unites and blends production with information and communication technology by mixing the data of the consumer with the data of the machine, putting machines to communicate with machines. The cyber-physical systems are made by virtualizing the machine and all the processes associated with it. To achieve a CPS all the data from the work unit needs to be collected and sent to the network, for storage and future use, by performance algorithms or for immediate use by the control systems.
+
+In industry 4.0 the components and the machines manage the production in a flexible form and efficient form autonomously.    /par
+Such advances have enabled services and functionalities such as cloud computing, where you have Software as a Service (Saas), Infrastructure as a Service (Iaas) and Platform as a Service (Paas).
+\bigskip
+
+With the possibility of simulating objects, new uses of Virtual Reality begin to appear such as planning, designing, manufacturing, providing services, maintenance, product testing, quality control and the possibility of feedback from an early stage.    \par
+With this, it is possible to plan the product and project without a physical prototype, which reduces the costs in these phases and allows companies to try new ideas without worrying so much about costs still in a phase of tests, being able to move to the production phase of the final product only.   \par
+Even in other industries such as the automobile it is possible to use the Virtual Reality in the sales phase, being able to show the user what they are buying (car) and all the different configurations without having to have all the possibilities available.  \par
+
+\section{RAMI 4.0}
+
+RAMI stands for Reference Architectural Model for industry 4.0. \par
+It is a Service Oriented Architecture (SOA) which is a style of software design where a collection of services that communicate with each other, this communication can be simple data or even two or more services coordinating some activity.    \par
+A service is a well-defined, self-contained and independent of the context or state of other services.   \par
+RAMI 4.0 is made of three axes creating a three-dimensional map through which it shows how to approach the issue of Industrie 4.0 in a structured way by combining all elements and IT components into this 3D model of layers and life cycle and at the same time breaking down the complex processes into simple packages, including data privacy and IT security and with this standardization it insures that all that are involved in Industrie 4.0 and its discussions understand each other.  \par
+\bigskip
+
+The first axis is about the architectural layers, on the bottom there’s the asset which is the real things, the product, the software and the workers. Above it we have the integration layer it’s where all the information about the assets is digitalized. Above that there’s 4 layers in the Digital World. The communication layer provides standardization of the communication by means of uniform data format in the direction of the Information layer and provides services for control of the Integration layer, the information layer is where the rules and events are preprocessed, it also ensures data integrity, the integration of different data consistently.   \par
+The Functional layer is where the functions are described and allows the horizontal integration of different functions, rules and decision are generated in the Functional layer. Business layer ensures the integrity of functions in the value stream, enabling business models and the resulting of the overall process, contains legal and regulatory Framework conditions.   \par
+
+\section{ISA 95}
+
+
+In a manufacturing company usually the business and the production are separated and lack proper communication, complicating the integration of business and logistics systems, which are responsible for the management of orders and making sure that all the materials needed to do the operations arrive at the proper time, to manufacturing systems, which are the systems responsible for the organization of the production. Having efficient manufacturing operations is difficult without proper representation and nomenclature, so that all the systems that need access to that information know how it is represented and the system that make it available also know how to represent it. All this could be solved with better and uniform models and definitions that defined all the objects, attributes and others, this is the aim of ISA-95. [2]  \par
+\bigskip
+
+ISA-95 in which IEC 62264 is based is an international standard developed by International Society of Automation (ISA) which is a non-profit association that sets standards for modern automation. IEC stands for International Electrotechnical Commission which is a non-profit organization that sets standards for electrical, electronic and related technologies.    \par
+ISA-95 has the purpose of developing a standardized uniform interface between enterprise systems, that are the ones that drive the plant schedules, and control systems that are the ones that make sure those schedules are met and guaranty a quality product. Control systems can be such as Programmable Logic Controllers (PLC) which are specialized computers with all the hardware and software to do a specific automation task; Distributed Control Systems (DCS) which are systems that distribute the logic and hardware in different microprocessors or Functional Groups (FG) for an easier implementation and providing segregation; simple control or advanced control systems. With that in mind ISA-95 provides consistent terminology and definitions which are the bedrock for a good communication between supplier and manufacturer [1], it also gives consistent various models that help clarify the boundary between the enterprise domain and the manufacturing domain. This boundary is identified using the proper models that represent functions, physical equipment, information that is shared within the domains, such as enterprise, manufacturing and control and the information that is shared between these domains. [2][4]   \par
+\bigskip
+
+Usually in the manufacturing world the coordination and control of plants is often done by a collaboration of several systems, Manufacturing Execution Systems (MES) are responsible for management of production operations, Warehouse Management Systems (WMS) or Tank Farm Management Systems take care of inventory management and other systems for each specific task. All these systems together are called Manufacturing Operations Management (MOM) systems.   \par
+MOM systems operate between the level of automation control systems and the level of enterprise business systems, usually are local to the site or area of production. The purpose of ISA-95 is to offer an efficient coordination and sharing of information between all these various levels.   \par
+The information that crosses the boundary between control and enterprise systems can be information about resource definitions, product definitions, production capabilities, production schedule, production performance. This information helps both the control systems to know what is expected from the manufacturing and the business systems to know what is available. [2] \par
+To find the boundary that separate the enterprise domain from the manufacturing operations and control domain there are multiple models that can be used [4] these models should be in multiple levels of detail and abstraction [4] from a high level (describing domains) to a low level (describing specific information) each model increasing the level of details in the previous:    \par
+\bigskip
+
+\begin{itemize}
+
+  \item \verb+Hierarchy model+ used to represent the various functions and domains of control divided in tiers, this model follows “The Purdue Reference Model from CIM”, the MESA International Functional Model, and the equipment hierarchy model from IEC 61512-1. [4]
+  \item \verb+Functional Data Flow model+ which represents within the manufacturing organizations the way data flows and its functionality, this model also follows “The Purdue Reference Model for CIM”. [4]
+  \item \verb+Information model+ that represents all the information that is contained inside the object model and provides context for the object models. [4]
+
+\end{itemize}
+
+\subsection{Hierarchy Model}
+\subsubsection{Functional Hierarchy}
+
+ISA-95 defines a hierarchy of activities in a manufacturing organization in five levels based on their functions, these levels being: \par
+\bigskip
+
+\begin{itemize}
+
+  \item \verb+Level 0+ is called Production Process and defines the processes of the physical layer which interacts directly with the hardware and the signalling mechanisms.
+  \item \verb+Level 1+ defines the control activities of the sensors and actuators.
+  \item \verb+Level 2 (and Level 1)+ is called Manufacturing Control and defines control and automation activities with real-time responses in the order of sub-seconds and are usually implemented on PLC’s, Open Control Systems (OCS) and DCS.
+  \item \verb+Level 3+ is called Manufacturing Operations Management and defines activities that work on time frames of days, hours, work shifts, all the way to seconds. These are comprised of maintenance functions, quality assurance, inventory movement, that collectively are called MOM systems. These activities are supported by a wide variety of systems, like Supervisory Control and Data Acquisition (SCADA) systems which monitor the process and provide operator control, batch control systems that enable the execution of recipes, data historians that collect and preserve time based data that is collected in systems from Level 2, recipe and document management systems that manage all the recipes and workflow related instructions,  detailed scheduling, work dispatching, work and product tracking.
+  \item \verb+Level 4+ is called Business Planning & Logistics and defines activities that work on time frames of months, weeks and/or days. Enterprise Resource Planning (ERP) is part of this level and is used to automate this level functions. [1][4]
+  
+\end{itemize}
+
+For a activity to be included in level 1 to 3 in the manufacturing operations and control domain the activity must be involved directly in manufacturing and include information in reference to personnel, equipment, or material it also as to be critical to plant safety, reliability or efficiency. \par
+It can also be an activity that is critical to product quality or maintaining compliance with regulation. \par
+\bigskip
+
+In level 4 usually there are activities that collect and maintain information about several assets. These activities can be inventory managers, collecting and maintaining availability and providing data for purchase, this inventory can be raw materials and spare parts, energy and energy sources. These activities can also collect and maintain information about overall goods in process, production inventory files, quality control files related to the customer requirements. These activities also collect and maintain information about the use and history of other resources, such as machinery and equipment or manpower use for preventive and predictive maintenance planning, and to inform personnel and accounting respectively.   \par
+Also, in level 4 the typical activities establish the basic plant production schedule or the ability to modify it as necessary in case of a major production interruption or to accommodate for orders received, based on changes to available resources, energy sources, power demand, and maintenance requirements.    \par
+Activities in level 4 also create an optimum maintenance and equipment renovation schedules in coordination with the basic plant production schedule. In order to keep with the schedules, these activities also determine the optimum inventory levels of raw materials, energy sources, spare parts, and goods in process at every storage site, this include materials requirements planning (MRP) and spare parts procurement. Based on all this information these activities can predict production capacity.   \par
+\bigskip
+
+Activities in level 3 typically are responsible for reporting on area production including variable manufacturing costs based on the enterprise standard cost model, collection and maintain data on asset in the area such as production, inventory, manpower, raw materials, production quality, spare parts and energy usage. These activities usually also perform data collection and off-line analysis required by engineering functions, this can include statistical quality analysis and related control functions. \par
+These activities also can perform personnel functions such as work period statistics, vacation schedule, work force schedule, union line of progression, and in-house training and personnel qualification. Activities in level 3 also can create detailed production schedules for their own area, or modify it to compensate for plant production interruptions that may occur, these schedules include maintenance, transportation and any other production related needs; these production schedules stand to complete the production schedules established by activities in level 4 but also locally optimize the cost for the individual production area. These activities can transform the business-oriented information used for data exchanges between level 4 and 3 into the manufacturing operations management-oriented information used within level 3 and lower levels.   \par
+Activities in level 3 also typically perform maintenance on production equipment, they perform laboratory and quality testing of materials and perform movement and storage of materials.  \par
+\bigskip
+
+The MOM domain is responsible for managing resources associated with control and manufacturing. This resource includes machines, tools, labour skills, materials, other equipment, documents, and any other entities that are required for work to start or to be completed. During the management of such resources a local resource reservation may be required to meet production-scheduling objectives. As part of management of resources, the MOM domain also makes sure that all equipment is properly set up ready for processing, including any allocation needed for set-up. The MOM domain is also responsible for providing statuses in real-time of the resources and detailed history of resource use.    \par
+The MOM domain also as the capability of dispatching production, data collection and acquisition, quality operations management, process, management, production tracking, operations and detailed scheduling, document control, labour management, maintenance operations management, movement, storage and tracking of materials. \par
+\bigskip
+
+\subsubsection{Role Based Equipment Hierarchy}
+
+The assets on an enterprise can also be organized in a hierarchy based on their roles, where lower-level groupings are combined to form higher levels in the hierarchy. Sometimes a grouping in one level can be incorporated into another grouping in the same level.  \par
+The following figure illustrates the role-based equipment hierarchy.    \par
+An enterprise represents the top level of a role-based equipment hierarchy and it’s a collection of sites and areas. The enterprise is responsible for the management and planning of the entire system, determining what will be manufactured and, in a general view, how it will be manufactured. Even thought level 4 functions are concerned with the enterprise and site levels, the enterprise planning and scheduling can involve all the way from areas to work units.   \par
+A site is a physical, geographical or logical grouping determined by the enterprise. A site can contain areas, production lines, process cells, and production units. Level 4 functions in a site do local site management and optimization. The site planning and scheduling can involve work centers and work units within areas. Site are usually identified by their geographical location and main production capability. Site have a well-defined manufacturing capability.  \par
+An area is a physical, geographical, or logical grouping determined by the site. Areas are usually identified by their main capability and geographical location within a site. An area has its capabilities and capacities well-defined and they are used for level 3 and level 4 planning and scheduling. It may contain work centers such as process cells and production units, production lines, and storage zones.    \par
+Production cells and units are the lowest equipment used for batch manufacturing schedules, they have a well-defined manufacturing capabilities and batch capabilities that are used for level 3 functions or as an input for level 4 functions.   \par
+Production lines are the lowest equipment used for discrete manufacturing schedules, they have well-defined manufacturing capabilities and throughput capacities and they are used for level 3 functions and used as inputs for level 4 scheduling even if the production lines are not scheduled by level 4 functions.    \par
+A storage zone is a type of work center and is the lower-level element of an equipment hierarchy used in material storage and movement activities. A storage zone has the capability needed for the receipt, storage, retrieval, movement and shipment of materials from one work center to another within or between enterprises.    \par
+Work centers are elements of the equipment hierarchy under an area and may be defined by the user. Works centers can be process cells, production units, production lines, or storage zones. The types of work centers can be expanded if necessary, for application which have a role base similar to the types defined, when defined a new type of work center has to maintain the same relationship within the hierarchy as defined for work center types.   \par
+Work centers are the grouping of equipment scheduled by the level 4 and level 3 functions and have well-defined capabilities and capacities that are used for level 3 functions and can be used as input for level 4 processes.   \par
+\bigskip
+
+\subsubsection{Decision Hierarchy}
+
+In addition, there is also a hierarchy of decision-making and associated scheduling involved in enterprise to control integration.    \par
+An enterprise is organized in levels and functions, and decisions are made within multiple functions and multiple levels. An integrated decision-making means that all the decisions made have a contribution to the achievement of common objectives set by the enterprise. Integrated decision-making also means that all the time horizons in which the various decisions are made are coordinated. This also means that all the necessary and correct raw materials and products are available at the correct time, on the correct machine, with the correct configuration, correct instruction and recipes, and processed and being operated by the correct personnel to maintain the set schedule. \par
+Decision-making activities are activities that deal with three types of assets these being products, resources and time. The combination of these three leads into three types of decisions: \par
+\begin{itemize}
+
+  \item \verb+Manage products+: when the focus of the decisions are the products and time such as quantity and when they are to be produced without concern for the resources.
+  \item \verb+Manage resources+: when the focus is resources and time such as managing the capacity of resources.
+  \item \verb+Plan production+: when the focus is planning and to synchronize all three, the flow of products, flow of resources and time.
+  
+\end{itemize}
+
+\subsection{Time Horizons}
+
+Any decisions can be categorized in one of three basic time horizons: \par
+\begin{itemize}
+
+  \item \verb+Long term and broad scope+: These decisions are long-term and concerned with the global objectives of the enterprise.
+  \item \verb+Medium term and intermediate scope+: These decisions are medium-term and concerned with the allocation of resources in order to meet the objectives defined in the long-term time horizon.
+  \item \verb+Short term and limited scope+: These decisions are short-term and concerned with the immediate actions and planning of them to achieve the objectives of the long-term time horizon using the means given by the medium-term time horizon.
+  
+\end{itemize}
+
+\bigskip
+
+\section{Connectivity}
+When an application in developed there may be the interest to connect it to a local network or to the internet. In my solution there will be such interest, to do so I used the Internet Protocol Suite which is a conceptual model and a set of communication protocols used in the internet and similarly structured computer networks.
+
+The Internet Protocol Suite is composed by four layers, Application Layer, Transport Layer, Internet Layer and Link Layer.
+
+The choice for Application Layer is very vast but the most relevant options are OPC-UA, MQTT, AMQP and XMPP.
+
+\subsection{MQTT}
+Message Queuing Telemetry Transport (MQTT) is a lightweight machine to machine (M2M) communication protocol that works on top of TCP/IP protocol, designed for constrained devices and low-bandwidth, high-latency or unreliable networks. it is intended to be used in an Internet of Things (IoT) environment.
+
+MQTT works in a publish and subscribe system, all the clients connect to the same broker and publish messages to topics, the broker than distributes the message to all the clients that subscribed to that topic.
+
+A client can subscribe to several topics and publish in any topic. A message and a topic can be any string but the topic follows a few rules. The topic can consist of one or more topic levels being the levels separated by a forward slash ("/").
+
+For example if a car engine temperature is being monitored it could be published in the topic \textit{car/engine/temperature}. In MQTT topics there are two types of wildcards, a single level \textit{"+"} and a multilevel \textit{"\#"}. As such if a client wants to subscribe and receive updates about all the temperatures in the car he can subscribe to \textit{car/+/temperature} and if he wants to subscribe to everything related to the engine he can subscribe to \textit{car/engine/\#}. 
+
+\bigskip
+
+\section{Hardware}
+The IoT 2000 
+
+\section{Communication Busses}
+
+\subsection{I$^2$C}
+
+\subsection{SPI}
+
+\cleardoublepage
+\chapter{Architecture}
+
+A main characteristic of Industry 4.0 is the creation of cyber-physical systems, which are the digital representation of real systems by creation of a digital twin. To realize a cyber-physical system it is necessary to acquire the important properties of the physical system, this chapter will focus on the discovery of said properties.
+
+\bigskip
+In this chapter I will analyse two use cases in Portuguese industry. The first use case being a production line in a Renault factory in Cacia, Aveiro and the second use case is a production line in Solancis, a factory in Benedita, Alcobaça.
+
+In the second section using the two use cases I will create Personas for an industrial system. Personas is a technique utilized in designing and engineering interactive systems \cite{PersonasCreating, WhenIsPersona}, I will elaborate on the concept of Personas in this section.
+
+In the  third section the system design is presented for the cutting machine in Solancis. The diagrams presented use the UML modeling language. UML (Unified Modelling Language) is a modeling language that aims to standardize the way a system design is visualized, I will elaborate more on UML and how to utilize it in this section.
+
+\section{Use Cases}
+
+In this section two use cases will be studied, the study of this use cases will help me create personas and create a model that generalizes to any system.
+
+\subsection{Renault}
+
+This use case will be, as mentioned before, a production line in a Renault factory in Cacia, Aveiro. For this example I turned to a former student of Aveiro University who currently works for the said factory, for confidentiality reasons he did not told me the specific processes that the raw material was subjected to.
+
+As seen in Figure \ref{processRenault} this production line starts with a buffer of raw material that is supplied by an operator, next a robotic arm loads the raw material into two different machines that do the same process to the raw material. 
+
+The product continues to a cleaning station after which it goes to a second process in two different machines again. At the end of the production line a robotic arm transfers each product to a storage space.
+
+
+The operator of this production line is not present in it at all times, he actually spends most of his time in his office and only comes to the production line if his intervention is needed.
+The actions that the operator takes in the system are normally to refill the buffer for raw material at the entrance of the production line and in case of a malfunction in a robotic arm he can also replace it moving raw material to the machines in process 1 or from machine of process 2 to a storage space.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth, keepaspectratio]
+    {"Architecture_Images/Processo_Renault"}
+    \caption{Produciton Line in Renault Factory}
+    \label{processRenault}
+\end{figure}
+\subsection{Solancis}
+
+Solancis is a factory in Benedita, Alcobaça that specializes in the limestone transformation. This factory employs CNC (Computer Numerical Control) machines in its production line. A CNC machine is a computer controlled carving machine.  It generally speaking reads G Code that instructs the machine how to move, what feed-rate and spindle speed to use, which cutting tool should be in the spindle and all other properties. The machines employed in Solancis are manufactured by CAE and the firmware developed and maintained by INOCAM. Both CAE and INOCAM are companies that belong to the Produtech cluster and in collaboration with Solancis allowed me to visit one production lines in which their machines were employed.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth, keepaspectratio]
+    {"Architecture_Images/SolancisAllProcess"}
+    \caption{Overview of Solancis Production Line}
+    \label{SolancisAllProcess}
+\end{figure}
+
+\bigskip
+An overview of the production line in study can be seen in Figure \ref{SolancisAllProcess}, it starts with a solid square block of stone with an edge of around 1,5m. The block can be cut as a whole via water jets of around 5000 atm or with a band saw making complex profiles. The block of stone can also be sawn into slabs of the desired thickness. The saw used uses a counter-weight to reduce power consumption but is still one of the processes that uses the most energy as a result the factory tries to do it mostly at night to utilize cheaper electricity.
+
+Following the cut process the slabs are stored and sent to the finishing of the stone where the slab can go through a variety of processes. The slabs can be polished using thin or thick brushes or they can be burned with a blowtorch depending on the desired finish. The slabs are then stored in vertical pallets and transported in an overhead crane (a crane suspended from the ceiling that can only move on its rails) to the next step in production.
+
+In this next production step the slabs arrive in an overhead crane and are placed on a conveyor system which spans this entire step until the final product is placed on a vertical pallet. In this step the stone slabs are cut into the final product. The factory is equipped with two different CNC cutting machines, one that can cut more complex parts and another that can cut thicker slabs but less complex parts, being the latter a machine that is produced and maintained by CEI and INOCAM and the subject of this use case.
+
+\bigskip
+As mentioned before the slab arrives to the CNC machine in an overhead crane. The slabs are then placed in a buffer that is on a conveyor system. The operator then moves a slab to the machine intake, where he marks the defects on the slab with the help of an overhead camera and a stick with a black ball on the end. What the camera films appears in the GUI of the operator station, using computer vision the black ball is detected and mark the areas selected by the operator on the slab image.
+
+On the GUI next to the slab image there are all the parts that need to be manufactured, the operator proceeds to place them onto the slab image in a way that they fit without utilizing the areas with defects. The operator needs to be careful and leave space for the blade otherwise a cut from one part would damage another part as seen in Figure \ref{CNCcut}. In thinner slabs the operator can make common cuts to optimize the use of the slab as seen in Figure \ref{Common Cut} before the machine can lift parts and move them away with suction cups.
+
+The CNC machine cuts the slabs using the code generated by an intermediate driver, that converts what the operator sees on the GUI into CNC instructions. During the cutting process, the milling bit is cooled via a jet of water and all the remains are smashed and transported on a conveyor belt to a rubble in the back of the factory.
+
+\begin{figure}[h]
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+    \includegraphics[width=\textwidth, keepaspectratio]
+    {"Architecture_Images/profileViewCut"}
+    \caption{Profile view of a cut}
+    \label{CNCcut}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=\textwidth, keepaspectratio]
+    {"Architecture_Images/CommonCut"}
+    \caption{Profile view of a cut}
+    \label{Common Cut}
+\end{minipage}
+\end{figure}
+
+At the end of the cutting process, all the parts come out of the machine on the same conveyor system they went in. An automated process put unique and individual labels on every part and an operator picks every part and puts it on a vertical pallet with the help of electric suction cups. The order in which the operator places the parts on the pallet is decided at the offices where the order was placed.
+
+\section{Personas}
+
+A persona, first introduced by Alan Cooper, defines an archetypal user of a system, an example of the kind of person who would interact with it. The idea is that if you want to design effective software, then it needs to be designed for a specific person. Personas represent fictitious people which are based on your knowledge of real users. \cite{PersonasCreating, WhenIsPersona, LivingPersonaTechnique}
+
+It is quite common to see a page or two of documentation written for each persona. The goal is to bring your users to life by developing personas with real names, personalities, motivations, and often even a photo. \cite{PersonasCreating}
+
+Usually personas are created alongside scenarios, a persona is placed in a scenario that shows what that persona motivations are toward the system, what actions that persona would take in the scenario and some reasons these actions were taken can provide insight into users’ motivations and expectations. \cite{PersonasCreating, LivingPersonaTechnique}
+
+\bigskip
+When creating the personas for the use cases not all personas represent real people, some represent other programs that would interact with it and also some represent their role in the overall system.
+
+\begin{table}[h!]
+\centering
+ \begin{tabular}{||p{3.5cm}|p{5cm}|p{5cm}||} 
+ \hline
+ Persona & Goal & Variables to Acquire \\ 
+ \hline\hline
+ Operator & Wants to know when it is necessary to load the machine with more raw material and if it is necessary to replace the work of the robotic arms. & -Robotic arms status \par -Intake buffer status \\ 
+ \hline
+ Production & Wants to keep production flowing to fill quotas and improve system efficiency & -Quantity of parts in good quality in real time and its history \par -Maintenance schedule \par -Malfunctions status
+ \\
+ \hline
+ Maintenance & Wants to know about any emergency maintenance, when is the next scheduled maintenance and what is needs to be changed to make ahead of time planning. & -Maintenance schedule (preventive maintenance) \par -Maintenance history \par -Type of use the machines have had \par  -Necessary information to make prediction of the next maintenance out of schedule (predictive maintenance) \par -Down time status
+ \\
+ \hline
+ Quality Assurance & Wants to ensure a flow of good quality parts & -Percentage of defective parts in real time and its history \par -Origin of defects
+ \\
+ \hline
+\end{tabular}
+\caption{Personas in Renault Use Case}
+\label{table:1}
+\end{table}
+
+\begin{table}[h!]
+\centering
+ \begin{tabular}{||p{5cm}|p{8.5cm}||} 
+ \hline
+ Persona / Scenario & Interaction with the system  \\ 
+ \hline\hline
+ Operator / Finishing &  He programs the sequences of operations and ensure that the correct tools are on the machine
+ \\ 
+ \hline
+ Operator / Cutting Machine & He ensures slabs are well positioned, machine is running (replace worn equipment) and oversee operation 
+ \\ 
+ \hline
+ ERP & -Wants to know what is being produced \par -How much time was spent and what was spent (raw material, consumption) \par -Maximize production \par -Cost prediction \par -Order scheduling \gpar -Maintenance scheduling \par -Machine scheduling \par -Overall logistic
+ \\
+ \hline
+ MES & -Parts traceability \par -Raw material traceability \par -Consumption in real time
+ \\
+ \hline
+\end{tabular}
+\caption{Personas in Solancis Use Case}
+\label{table:1}
+\end{table}
+
+\newpage
+\section{System Design}
+
+To present the system design I will utilize UML as it is very useful to present in a standardized view. UML guides the creation of multiple types of diagrams, such as Structural or Static and Dynamic or Behavioral.\cite{UMLSite, IncrementalUML} Different types of diagrams are utilized for different effects, \cite{UMLSite, UMLPoster} this section starts this creating a sequence chart to represent the order for messages exchanged between the actors in the Solancis CNC cutting machine. The diagrams that follow are based on the meetings I had with INOCAM.
+
+\subsection{Sequence Chart}
+
+A sequence diagram represents the interactions between different objects and actors in the system in a sequential order.
+
+The process starts when the ERP receives an order from a client. The ERP then creates all the digital twins of the final products that will be created with the predicted information about their production and schedules the corresponding machines for production. When the operations are about to start the machine that will indeed make the operation on the raw material (may differ from what ERP planned) sends the corresponding information to the digital twin of the final products.
+
+At the beginning of the operation the machine creates an object for the operation, which will publish in the final product the information related to the same operation. The operation (digital) then proceeds to ask the database for the CAD files needed to perform said operation, these files are then passed to the machine for the operation to be performed. During operation all relevant information is sent to the end product object for complete traceability, this includes error messages.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth, keepaspectratio]
+    {"Architecture_Images/Sequence Chart"}
+    \caption{Sequence Chart.}
+    \label{arch:sequence}
+\end{figure}
+
+\subsection{Class Diagram}
+
+A class diagram is a static structure diagram that describes a system by showing its classes, their attributes, operations and the relationships between classes.
+
+From the sequence diagram in the previous section Figure \ref{arch:sequence}, classes such as the machine, raw material, final product and operation. Other classes that would be useful to have in the system are operating range, to show all the available operations and what operations will be done to achieve the final product and the history of everything in the system.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth, keepaspectratio]
+    {"Architecture_Images/Class Diagram"}
+    \caption{Class Diagram}
+    \label{arch:class}
+\end{figure}
+
+The machine class and the raw material class are directly associated in the manufacturing process. From them resulting and having a dependency the final product and history classes. The raw material has an operating range. The operation class is part of the operating range class.
+
+The class diagram in Figure \ref{arch:class} and attributes from Figure \ref{arch:sequence} and others from meetings with INOCAM the class diagram in Figure \ref{arch:dataBase} is made.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth, keepaspectratio]
+    {"Architecture_Images/Base de Dados"}
+    \caption{Class Diagram with Attributes}
+    \label{arch:dataBase}
+\end{figure}
+
+In the diagram in Figure \ref{arch:dataBase} there are new classes such as the Tool that is installed in the machine that has its own properties. 
+
+The Final Product class as his own history comprised of the operation range that was predicted by the ERP and what operation range was actually done and other relevant information such as the ID of the raw material, manufacturer ID and client ID.
+
+\cleardoublepage
+\chapter{Implementation}
+
+\section{Overview}
+
+In Figure \ref{imple:block} the system block diagram. The IoT 2020 communicates with sensors via I$^2$C and utilizes its digital output and PWM to act on the actuators. The sensors utilized were the MCP9808 manufactured by Microchip that is a temperature sensor and TSL2591 manufactured by ams, it is an ambient light sensor. The actuators utilized are two LEDs, one connected to a digital output and another connected to a PWM output.
+
+The IoT is connected to a work station running Node-RED. Node-RED is a flow-based program \cite{NodeREDWeb} that allows to represent a system behaviour as a network of nodes. In Node-RED each node as a specific purpose, it receives some data and processes it in a defined manner or generates data and passes it to the next node.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth, keepaspectratio]
+    {"Implementacao/BlockDiagram"}
+    \caption{System Block Diagram}
+    \label{imple:block}
+\end{figure}
+
+\subsection{Flowchart}
+
+The system has two activities taking place at the same time. One activity acquires data from the inputs that are sensors and an analog input simulated with a potentiometer and publishes them to the network as seen in Figure \ref{imple:flowAcq}. The other activity receives commands from from the network and executes them as seen in Figure \ref{imple:flowCom}.
+
+\bigskip
+The activity on Figure \ref{imple:flowAcq} starts by configuring the inputs. The sensors are connected via I$^2$C and the potentiometer is connected to an analog input. Once a second the activity reads the current values on those inputs. The analog input utilizes the integrated ADC (Analog to Digital Converters) to convert the voltage at the input to a float. The sensors data is acquired by reading his internal register, the register depends on the sensor. The activity then sends the data on the network utilizing MQTT, the topics are predetermined and are different for each input.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth, keepaspectratio]
+    {"Implementacao/FlowchartAcquisition"}
+    \caption{Flowchart of Data Acquisition}
+    \label{imple:flowAcq}
+\end{figure}
+
+The activity on Figure \ref{imple:flowCom} waits for a command to arrive from the network via MQTT. The topic in which the command is publish determines the nature of that command. The command can be to control the IoT2020, in this case the only available command is to turn it off. The command can also be to configure a sensor or take action on an actuator.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth, keepaspectratio]
+    {"Implementacao/FlowchartCommands"}
+    \caption{Flowchart of Command Execution}
+    \label{imple:flowCom}
+\end{figure}
+
+\section{Sensors and Device Drivers}
+
+The sensors utilized are MCP9808 and TSL2591, they are a temperature sensor and a light sensor respectively. In the following sections each sensor is explained in more detail along with their device driver.
+
+\subsection{MCP9808}
+
+MCP9808 is a digital temperature sensor manufacturer by microchip. Internally the MCP9808 acquires the temperature using a band gap temperature sensor, the analog signal in then converter to digital in the internal ADC and stored in the ambient light register.\cite{MCP9808DataSheet} Since the sensor as a temperature range from -40\textdegree{}C to 125\textdegree{}C \cite{MCP9808DataSheet} it makes it ideal to read ambient temperature and in most industrial environments. The sensor has three digital inputs (A0, A1 and A2) that allow to set its address. The address is comprised of a byte, and these three bits correspond to the three lowest bits (XXXX XA3A2A1). The default address if all this pins are at 0 is 0x18 (0001 1000). \cite{MCP9808DataSheet}
+
+Two MCP9808 are utilized, to distinguish between them when addressing them one has the A1 bit at 1 making its address 0x19 (0001 1001).
+
+\bigskip
+The device driver for this sensor allows to read the temperature in Celsius and Fahrenheit, to change the resolution of the readings and to put the sensor into power saving mode.
+
+To avoid the use of invalid values when setting and getting the sensor current resolution and to facilitate reading the code the custom type MCP9808\_Resolution\_t is defined. 
+
+\bigskip
+The function readTempC does not take an input and reads the ambient temperature in the register 0x05. \cite{MCP9808DataSheet}
+
+The function readTempF does not take an input and utilizes the function readTempC to read the ambient temperature in Celsius and then converts the value to Fahrenheit.
+
+The function setResolution takes as an input a value of the type MCP9808\_Resolution\_t.
+
+The function getResolution does not take an input and returnes the current resolution of the sensor in a variable of the type MCP9808\_Resolution\_t.
+
+The functions shutdown\_wake, shutdown and wake allow the sensor to switch between power saving mode and normal functionality. The function shutdown\_wake takes a Boolean variable as an input, if the input is false power saving mode is active and a true resumes normal functionality. During power saving mode all power consuming functionalities are disabled but the serial interface remains active. \cite{MCP9808DataSheet}
+
+\subsection{TSL2591}
+
+TSL2591 is a digital light sensor manufactured by ams. The TSL2591 has two channels that respond to different light specters. One channel has a broadband photodiode that react to visible light and infrared light and another channel with a photodiode that only reacts to infrared. Internally two ADCs convert the current in the photodiodes to a digital representation of the irradiance at each channel. \cite{TSL2591DataSheet}
+
+\bigskip
+The device driver for this sensor has three custom types, these types exist to prevent the wrong value to be used and to be easier to read the code.
+
+
+
+\section{Node-RED}
+
+
+
+\begin{itemize}
+  \item \verb+Implementation+: How I implemented, without code, maybe some snips, write through the implementation
+  \item \verb+Flow Charts+
+  \item \verb+Class Charts+
+  \item \verb+Other charts+: (all part of the previous section, implementation)
+  \item \verb+Sensors+: sensors used, how they communicate, maybe some important registries (or in annex)
+  \item \verb+MQTT Handler+: How the code in C was implemented, its purpose
+  \item \verb+Message Queues+: How the two processes are interconnected and communicate
+  \item \verb+Node-Red+: Write about the node red dashboard
+
+\end{itemize}
+
+\cleardoublepage
+\chapter{Results}
+\begin{itemize}
+  \item \verb+Metrics+: Write about the different metrics and how they influence the system
+  \item \verb+Jitter+: Write about the jitter and how it determines real-time fidelity 
+  \item \verb+Execution Time+: Write how execution timer determines maximum sample rate and how it could be improved
+
+\end{itemize}
+
+\cleardoublepage
+\chapter{Conclusions}
+\begin{itemize}
+  \item \verb+Conclusions+
+
+\end{itemize}
+
+%
+% The bibliography
+%
+\cleardoublepage
+  % Use this is the final version
+  %  unsrt produces numbered entries, sorted by order of citation
+  %  plain produces numbered entries, sorted alphabetically
+  %  other styles are possible (I recommend the harvard package)
+  \bibliographystyle{unsrt}
+  %\bibliographystyle{plain}
+  \bibliography{references}% replace by the name of name of your .bib file
+
+
+\end{document}

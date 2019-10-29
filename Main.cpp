@@ -401,11 +401,14 @@ int main(int argc, char *argv[]){
 			flag=1;
 		}
 		*/
-#ifdef MEASURING
+
+//#ifdef MEASURING
 		/*Only used to measure quality and speed of code*/
-		start = steady_clock::now();
+//		start = steady_clock::now();
 		/*No Longer part of the measure system */
-#endif
+//#endif
+
+
 
 		/*
 		if(DIPSW ->read()){
@@ -422,14 +425,28 @@ int main(int argc, char *argv[]){
 		} else {
 			check(user_led->write(1));
 		}
+
+#ifdef MEASURING
+		/*Only used to measure quality and speed of code*/
+		start = steady_clock::now();
+		/*No Longer part of the measure system */
+#endif
+
 		w=a_pin->readFloat();
 		w=w*5;
+
+#ifdef MEASURING
+		/*Only used to measure quality and speed of code*/
+		end = steady_clock::now();
+		/*No Longer part of the measure system */
+#endif
+
 		MQ_pub("Sensor/Analog/1/Val", to_string(w));
 		publishSensors();
 
 #ifdef MEASURING
 		/*Only used to measure quality and speed of code*/
-		end = steady_clock::now();
+//		end = steady_clock::now();
 		times [countTimes] = duration_cast<microseconds>(start - reference).count();
 		times [countTimes+1] = duration_cast<microseconds>(end - reference).count();
 		countTimes+=2;
